@@ -18,8 +18,7 @@ type Frontend struct {
 func (f *Frontend) initRoutes(router *mux.Router) {
 	router.HandleFunc(`/u/{user_id:\d+}`, UserFeed).Methods("GET", "HEAD")
 	router.HandleFunc(`/`, AskForURL).Methods("GET", "HEAD")
-	enqueueH := f2h(f, (*Frontend).EnqueueURLOrUserId)
-	router.HandleFunc(`/plus/enqueue`, enqueueH).Methods("POST")
+	router.HandleFunc(`/plus/enqueue`, EnqueueURLOrUserId).Methods("POST")
 }
 
 func (f *Frontend) Start() os.Error {
@@ -34,12 +33,6 @@ func (f *Frontend) ShutdownChan() chan string {
 	return f.shutdownChan
 }
 
-func f2h(f *Frontend, fun func(*Frontend, http.ResponseWriter, *http.Request)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fun(f, w, r)
-	}
-}
-
 // Handlers
 var feedTemplate = template.Must(template.ParseFile("feed.template.xml"))
 type FeedWithRequest struct {
@@ -48,7 +41,7 @@ type FeedWithRequest struct {
 }
 
 func UserFeed(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r) // this is one massive lock and i hate it.
+	vars := mux.Vars(r) // FIXME this is one massive lock and i hate it.
 	userId := PlausibleUserId(vars["user_id"])
 	if userId == "" {
 		// TODO: flash[:notice] thing
@@ -89,7 +82,7 @@ func AskForURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (f *Frontend) EnqueueURLOrUserId(w http.ResponseWriter, r *http.Request) {
+func EnqueueURLOrUserId(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Printf("client error on %s: %s\n", r.URL.Raw, err)
