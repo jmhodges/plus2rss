@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title type="html">{{.Title | html}}</title>
+  <id>{{.Id | html}}</id>
+  <updated>{{.Updated | html}}</updated>
+  {{/* Should use frontendHost, etc. */}}
+  <link href="http://{{.Req.Host|html}}{{.Req.URL.Path|html}}" rel="self" />
+  <link href="http://{{.Req.Host|html}}" />
+  {{ range .Items }}
+  <entry>
+    <title type="html">{{.Title | html }}</title>
+    <id>{{.URL | html}}</id>
+    <author>
+      <name>{{.ActorName | html}}</name>
+    </author>
+    <content type="html">{{.Content | html}}</content>
+    <updated>{{.Updated | html}}</updated>
+    <published>{{.Published | html }}</published>
+    <link href="{{.URL | html }}" />
+  </entry>{{end}}
+</feed>
