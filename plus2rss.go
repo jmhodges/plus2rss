@@ -17,8 +17,8 @@ type Service interface {
 	ShutdownChan() chan string
 }
 
+// TODO: fix timestamps, add attachments, handle posts that were reshares
 func main() {
-
 	var frontendHost string
 	var frontendAddr string
 	var clientSecret string
