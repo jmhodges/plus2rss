@@ -44,9 +44,7 @@ func main() {
 }
 
 func feedStorage(clientSecret string) (FeedStorage, os.Error) {
-	retriever := new(FeedRetriever)
-	retriever.Client = http.DefaultClient
-	retriever.Key = clientSecret
+	retriever := &FeedRetriever{http.DefaultClient, clientSecret}
 	return retriever, nil
 }
 
