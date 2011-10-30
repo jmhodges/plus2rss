@@ -43,12 +43,6 @@ func main() {
 	log.Printf("frontend shutdown: %s", msg)
 }
 
-type TopLevelNotFound struct{}
-
-func (t *TopLevelNotFound) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.NotFound(w, r)
-}
-
 func feedStorage(clientSecret string) (FeedStorage, os.Error) {
 	retriever := new(FeedRetriever)
 	retriever.Client = http.DefaultClient
