@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"http"
-	"json"
+	"io"
 	"log"
-	"os"
+	"net/http"
 )
 
 type FeedRetriever struct {
@@ -14,7 +14,7 @@ type FeedRetriever struct {
 }
 
 type FeedStorage interface {
-	Find(string) (Feed, os.Error)
+	Find(string) (Feed, error)
 }
 
 type Feed interface {
@@ -44,7 +44,7 @@ func (isc InvalidStatusCode) String() string {
 }
 
 // TODO An obvious place to cache data.
-func (f *FeedRetriever) Find(userId string) (Feed, os.Error) {
+func (f *FeedRetriever) Find(userId string) (Feed, error) {
 	jsdata, err := f.retrieve(userId)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (f *FeedRetriever) Find(userId string) (Feed, os.Error) {
 	return feed, nil
 }
 
-func (f *FeedRetriever) retrieve(userId string) ([]byte, os.Error) {
+func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
 	// There's a query escape, but not a url escape. Wha?
 	urlNoKey := "https://www.googleapis.com/plus/v1/people/" + userId + "/activities/public?key="
 	url := urlNoKey + f.Key
@@ -81,7 +81,7 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, os.Error) {
 	defer r.Body.Close()
 
 	var body []byte
-	var readErr os.Error
+	var readErr error
 	var n int
 	for readErr == nil {
 		suffix := make([]byte, 2e5) // 2K
@@ -91,7 +91,7 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, os.Error) {
 		}
 		body = append(body, suffix...)
 	}
-	if err != nil && err != os.EOF {
+	if err != nil && err != io.EOF {
 		return nil, err
 	}
 	return body, err

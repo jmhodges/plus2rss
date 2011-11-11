@@ -3,9 +3,8 @@ package main
 import (
 	"flag"
 	"gorilla.googlecode.com/hg/gorilla/mux"
-	"http"
 	"log"
-	"os"
+	"net/http"
 )
 
 const (
@@ -43,12 +42,12 @@ func main() {
 	log.Printf("frontend shutdown: %s", msg)
 }
 
-func feedStorage(clientSecret string) (FeedStorage, os.Error) {
+func feedStorage(clientSecret string) (FeedStorage, error) {
 	retriever := &FeedRetriever{http.DefaultClient, clientSecret}
 	return retriever, nil
 }
 
-func frontend(host, addr string, readTimeout, writeTimeout int64) (Service, os.Error) {
+func frontend(host, addr string, readTimeout, writeTimeout int64) (Service, error) {
 	router := mux.Host(host).NewRouter()
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

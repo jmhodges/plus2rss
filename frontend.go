@@ -2,11 +2,10 @@ package main
 
 import (
 	"gorilla.googlecode.com/hg/gorilla/mux"
-	"http"
 	"log"
-	"os"
+	"net/http"
 	"regexp"
-	"template"
+	"text/template"
 )
 
 type Frontend struct {
@@ -21,10 +20,10 @@ func (f *Frontend) initRoutes(router *mux.Router) {
 	router.HandleFunc(`/plus/enqueue`, EnqueueURLOrUserId).Methods("POST")
 }
 
-func (f *Frontend) Start() os.Error {
+func (f *Frontend) Start() error {
 	go func() {
 		err := f.server.ListenAndServe()
-		f.shutdownChan <- err.String()
+		f.shutdownChan <- err.Error()
 	}()
 	return nil
 }
