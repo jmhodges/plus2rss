@@ -1,12 +1,17 @@
 <html>
   <head>
+    <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
   </head>
   <body>
-    <form action="/plus/enqueue" method="post">
-      <label name="url_or_user_id">URL of Google+ user's posts</label>
-      <input name="url_or_user_id">
+    <div class="container">
+      <div class="row">
+        <form class="form-stacked" action="/plus/enqueue" method="post">
+          <label name="url_or_user_id">URL or id of a Google+ user</label>
+          <input class="span12" style="height: 27px;" name="url_or_user_id">
 
-      <button name="enqueue" type="submit">Search</button>
-    </form>
+          <button class="btn" name="enqueue" type="submit">Search</button>
+        </form>
+      </div>
+    </div>
   </body>
 </html>
