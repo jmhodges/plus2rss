@@ -39,7 +39,7 @@ var FeedStore FeedStorage
 
 type InvalidStatusCode int
 
-func (isc InvalidStatusCode) String() string {
+func (isc InvalidStatusCode) Error() string {
 	return fmt.Sprintf("Error status code from Google+: %d", int(isc))
 }
 
