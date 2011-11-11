@@ -33,6 +33,32 @@ type Activity interface {
 	Id() string
 	URL() string
 	ActorName() string
+	Attachments() []Attachment
+}
+
+type Attachment interface {
+	ObjectType() string
+	DisplayName() string
+	Id()          string
+	Content() string
+	URL() string
+	Image() Image
+	FullImage() Image
+	IsVideo() bool
+	IsPhoto() bool
+	IsArticle() bool
+}
+
+type Image interface {
+	URL() string
+	Type() string
+	Height() int64
+	Width() int64
+}
+
+type Embed interface {
+	URL() string
+	Type() string
 }
 
 var FeedStore FeedStorage
@@ -98,25 +124,37 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
 }
 
 type JSONImage struct {
-	URL    string `json:"url"`
-	Type   string // optional (e.g. profile images)
-	Height int64  // optional (e.g. profile images)
-	Width  int64  // optional (e.g. profile images)
+	JURL    string `json:"url"`
+	JType   string `json:"type"` // optional (e.g. profile images)
+	JHeight int64 `json:"height"`  // optional (e.g. profile images)
+	JWidth  int64 `json:"width"` // optional (e.g. profile images)
+}
+
+// Embeddable video link
+type JSONAttachment struct {
+	JObjectType string `json:"objectType"` // "video", "photo", or "article"
+	JDisplayName string `json:"displayName"`
+	JId string `json:"id"`
+	JContent string `json:"content"` // snippet of text if ObjectType == "article"
+	JURL string `json:"url"` // link to the attachment, is of type text/html
+	JImage *JSONImage `json:"image"`
+	JFullImage *JSONImage `json:"fullImage"`
 }
 
 type JSONActor struct {
 	Id          string
 	DisplayName string
 	URL         string
-	Image       JSONImage
+	Image       *JSONImage
 }
 
 type JSONPlusObject struct {
 	ObjectType string
-	Id         string
-	Actor      JSONActor
-	Content    string
-	URL        string
+	Id          string
+	Actor       JSONActor
+	Content     string
+	URL         string
+	JAttachments []*JSONAttachment `json:"attachments"`
 	// TODO: replies, plusoners, resharers
 }
 
@@ -129,7 +167,7 @@ type JSONActivity struct {
 	JURL            string `json:"url"`
 	Actor           JSONActor
 	JVerb           string `json:"verb"`
-	Object          JSONPlusObject
+	Object          *JSONPlusObject
 	Annotation      string
 	CrosspostSource string `json:"crosspostSource"`
 	// TODO: provider, access, attachments
@@ -193,4 +231,61 @@ func (a *JSONActivity) URL() string {
 
 func (a *JSONActivity) ActorName() string {
 	return a.Actor.DisplayName
+}
+
+func (a *JSONActivity) Attachments() []Attachment {
+	log.Printf("Welp %#v\n", a.Object.JAttachments)
+	as := make([]Attachment, len(a.Object.JAttachments))
+	for i, ao := range a.Object.JAttachments {
+		as[i] = ao
+	}
+	return as
+}
+
+func (a *JSONAttachment) ObjectType() string {
+	return a.JObjectType
+}
+func (a *JSONAttachment) DisplayName() string {
+	return a.JDisplayName
+}
+func (a *JSONAttachment) Id() string {
+	return a.JId
+}
+func (a *JSONAttachment) Content() string {
+	return a.JContent
+}
+func (a *JSONAttachment) URL() string {
+	return a.JURL
+}
+func (a *JSONAttachment) Image() Image {
+	return a.JImage
+}
+func (a *JSONAttachment) FullImage() Image {
+	return a.JFullImage
+}
+
+func(a *JSONAttachment) IsVideo() bool {
+	return a.JObjectType == "video"
+}
+func(a *JSONAttachment) IsPhoto() bool {
+	return a.JObjectType == "photo"
+}
+func(a *JSONAttachment) IsArticle() bool {
+	return a.JObjectType == "article"
+}
+
+func (i *JSONImage) URL() string {
+	return i.JURL
+}
+
+func (i *JSONImage) Type() string {
+	return i.JType
+}
+
+func (i *JSONImage) Height() int64 {
+	return i.JHeight
+}
+
+func (i *JSONImage) Width() int64 {
+	return i.JWidth
 }

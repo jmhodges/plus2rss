@@ -13,7 +13,27 @@
     <author>
       <name>{{.ActorName | html}}</name>
     </author>
-    <content type="html">{{.Content | html}}</content>
+    <content type="html">
+      {{.Content | html}}
+      {{ range .Attachments }}
+      {{ if .IsVideo }}
+      <div style="text-align:center;">
+        <object>
+          <param name="movie" value="{{.URL | html}}"></param>
+          <!-- google+ api lies. so we guess that its flash for now -->
+          <embed src="{{.URL | html}}" type="application/x-shockwave-flash"></embed>
+        </object>
+      </div>
+      <br clear="both" style="clear:both;" />
+      {{end}}
+      {{ if .IsPhoto }}
+      <a href="{{.FullImage.URL|html}}"><img src="{{.Image.URL|html}}"/></a>
+      {{end}}
+      {{ if .IsArticle }}
+      <p>Article: <a href="{{.URL|html}}">{{.DisplayName}}</a></p>
+      {{end}}
+      {{end}}
+    </content>
     <updated>{{.Updated | html}}</updated>
     <published>{{.Published | html }}</published>
     <link href="{{.URL | html }}" />
