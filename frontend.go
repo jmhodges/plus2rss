@@ -10,9 +10,9 @@ import (
 )
 
 type Frontend struct {
-	router *mux.Router
+	router       *mux.Router
 	shutdownChan chan string
-	server *http.Server
+	server       *http.Server
 }
 
 func (f *Frontend) initRoutes(router *mux.Router) {
@@ -35,6 +35,7 @@ func (f *Frontend) ShutdownChan() chan string {
 
 // Handlers
 var feedTemplate = template.Must(template.ParseFile("feed.template.xml"))
+
 type FeedWithRequest struct {
 	Feed
 	Req *http.Request
@@ -74,6 +75,7 @@ func UserFeed(w http.ResponseWriter, r *http.Request) {
 }
 
 var askForURLTemplate = template.Must(template.ParseFile("ask_for_url.template.html"))
+
 func AskForURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err := askForURLTemplate.Execute(w, nil)
@@ -113,6 +115,7 @@ func NoSuchFeed(w http.ResponseWriter, r *http.Request) {
 
 var justUserIdR = regexp.MustCompile(`^\d+$`)
 var plusUrlR = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
+
 func PlausibleUserId(urlOrUserId string) string {
 	if justUserIdR.MatchString(urlOrUserId) {
 		return urlOrUserId
@@ -125,12 +128,14 @@ func PlausibleUserId(urlOrUserId string) string {
 }
 
 var Body500 = []byte("Something went wrong. Wait a minute, please.\n")
+
 func Sigh500(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(Body500)
 }
 
 var Body503 = []byte("Taking too long.\n")
+
 func Sigh503(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(Body503)

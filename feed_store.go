@@ -10,7 +10,7 @@ import (
 
 type FeedRetriever struct {
 	Client *http.Client
-	Key string
+	Key    string
 }
 
 type FeedStorage interface {
@@ -62,8 +62,8 @@ func (f *FeedRetriever) Find(userId string) (Feed, os.Error) {
 
 func (f *FeedRetriever) retrieve(userId string) ([]byte, os.Error) {
 	// There's a query escape, but not a url escape. Wha?
-	urlNoKey := "https://www.googleapis.com/plus/v1/people/"+userId+"/activities/public?key="
-	url := urlNoKey+f.Key
+	urlNoKey := "https://www.googleapis.com/plus/v1/people/" + userId + "/activities/public?key="
+	url := urlNoKey + f.Key
 	log.Printf("Plus Get: %s", urlNoKey)
 
 	r, err := f.Client.Get(url)
@@ -98,49 +98,49 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, os.Error) {
 }
 
 type JSONImage struct {
-	URL string `json:"url"`
-	Type string // optional (e.g. profile images)
-	Height int64 // optional (e.g. profile images)
-	Width int64 // optional (e.g. profile images)
+	URL    string `json:"url"`
+	Type   string // optional (e.g. profile images)
+	Height int64  // optional (e.g. profile images)
+	Width  int64  // optional (e.g. profile images)
 }
 
 type JSONActor struct {
-	Id string
+	Id          string
 	DisplayName string
-	URL string
-	Image JSONImage
+	URL         string
+	Image       JSONImage
 }
 
 type JSONPlusObject struct {
 	ObjectType string
-	Id string
-	Actor JSONActor
-	Content string
-	URL string
+	Id         string
+	Actor      JSONActor
+	Content    string
+	URL        string
 	// TODO: replies, plusoners, resharers
 }
 
 type JSONActivity struct {
-	Kind string
-	JTitle string `json:"title"`
-	JPublished string `json:"published"`
-	JUpdated string `json:"updated"`
-	JId string `json:"id"`
-	JURL string `json:"url"`
-	Actor JSONActor
-	JVerb string `json:"verb"`
-	Object JSONPlusObject
-	Annotation string
+	Kind            string
+	JTitle          string `json:"title"`
+	JPublished      string `json:"published"`
+	JUpdated        string `json:"updated"`
+	JId             string `json:"id"`
+	JURL            string `json:"url"`
+	Actor           JSONActor
+	JVerb           string `json:"verb"`
+	Object          JSONPlusObject
+	Annotation      string
 	CrosspostSource string `json:"crosspostSource"`
 	// TODO: provider, access, attachments
 }
 
 type JSONFeed struct {
-	JTitle string `json:"title"`
-	JUpdated string `json:"updated"`
-	JId string `json:"id"`
-	JItems []*JSONActivity `json:"items"`
-	Actor JSONActor
+	JTitle   string          `json:"title"`
+	JUpdated string          `json:"updated"`
+	JId      string          `json:"id"`
+	JItems   []*JSONActivity `json:"items"`
+	Actor    JSONActor
 }
 
 func (j *JSONFeed) Title() string {
@@ -150,7 +150,6 @@ func (j *JSONFeed) Title() string {
 func (j *JSONFeed) Id() string {
 	return j.JId
 }
-
 
 func (j *JSONFeed) Updated() string {
 	return j.JUpdated
