@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"gorilla.googlecode.com/hg/gorilla/mux"
 	"log"
 	"net/http"
 )
@@ -22,8 +21,8 @@ func main() {
 	var frontendAddr string
 	var clientSecret string
 
-	flag.StringVar(&frontendHost, "host", "localhost", "the Host header to respond to in the frontend")
-	flag.StringVar(&frontendAddr, "http", "127.0.0.1:6543", "address to run the frontend o (e.g. :6543, localhost:4321)")
+	flag.StringVar(&frontendHost, "vhost", "localhost:6543", "the virtual Host header to respond to in the frontend")
+	flag.StringVar(&frontendAddr, "http", "localhost:6543", "address to run the frontend o (e.g. :6543, localhost:4321)")
 	flag.StringVar(&clientSecret, "csecret", "", "OAuth2 consumer secret for Google")
 	flag.Parse()
 
@@ -33,13 +32,10 @@ func main() {
 	}
 	FeedStore = fs
 
-	f, err := frontend(frontendHost, frontendAddr, frontendReadTimeoutNanos, frontendWriteTimeoutNanos)
-	if err != nil {
-		log.Fatalf("Could not boot frontend: %s", err)
-	}
-
-	msg := <-f.ShutdownChan()
-	log.Printf("frontend shutdown: %s", msg)
+	f, server := frontend(frontendHost, frontendAddr, frontendReadTimeoutNanos, frontendWriteTimeoutNanos)
+	_ = server
+	err = <-f.ShutdownChan()
+	log.Printf("frontend shutdown: %s", err)
 }
 
 func feedStorage(clientSecret string) (FeedStorage, error) {
@@ -47,20 +43,13 @@ func feedStorage(clientSecret string) (FeedStorage, error) {
 	return retriever, nil
 }
 
-func frontend(host, addr string, readTimeout, writeTimeout int64) (Service, error) {
-	router := mux.Host(host).NewRouter()
-	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		log.Printf("NotFound Vars: %#v\n", vars)
-		log.Printf("NotFound Raw URL: %s\n", r.URL.Raw)
-		w.WriteHeader(http.StatusNotFound)
-	})
-	server := &http.Server{addr, router, readTimeout, writeTimeout, 0}
-	f := &Frontend{router, make(chan string), server}
-	f.initRoutes(router)
-	err := f.Start()
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
+func frontend(host, addr string, readTimeout, writeTimeout int64) (*Frontend, *http.Server) {
+	f := &Frontend{host, make(chan error)}
+	server := &http.Server{addr, f, readTimeout, writeTimeout, 0}
+
+	go func() {
+		err := server.ListenAndServe()
+		f.ShutdownChan() <- err
+	}()
+	return f, server
 }

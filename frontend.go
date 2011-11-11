@@ -1,7 +1,6 @@
 package main
 
 import (
-	"gorilla.googlecode.com/hg/gorilla/mux"
 	"log"
 	"net/http"
 	"regexp"
@@ -9,26 +8,50 @@ import (
 )
 
 type Frontend struct {
-	router       *mux.Router
-	shutdownChan chan string
-	server       *http.Server
+	host string
+	shutdownChan chan error
 }
 
-func (f *Frontend) initRoutes(router *mux.Router) {
-	router.HandleFunc(`/u/{user_id:\d+}`, UserFeed).Methods("GET", "HEAD")
-	router.HandleFunc(`/`, AskForURL).Methods("GET", "HEAD")
-	router.HandleFunc(`/plus/enqueue`, EnqueueURLOrUserId).Methods("POST")
+var userIdPath = regexp.MustCompile(`/u/(\d+)`)
+
+func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	if r.Host != f.host {
+		log.Printf("Request asked for %s, expected %s", r.Host, f.host)
+		http.Redirect(w, r, "http://"+f.host, 302)
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Unable to parse request"))
+		return
+	}
+
+	uMatch := userIdPath.FindAllStringSubmatch(r.URL.Path, -1)
+	if len(uMatch) > 0  && len(uMatch[0][1]) > 0 && (r.Method == "GET" || r.Method == "HEAD") {
+		r.Form.Add("user_id", uMatch[0][1])
+		f.UserFeed(w, r)
+		return
+	}
+
+	if r.URL.Path == "/plus/enqueue" && r.Method == "POST" {
+		f.EnqueueURLOrUserId(w, r)
+		return
+	}
+
+	if r.URL.Path == "/"  && (r.Method == "GET" || r.Method == "HEAD") {
+		f.AskForURL(w, r)
+		return
+	}
+
+	log.Printf("NotFound Vars: %#v\n", r.Form)
+	log.Printf("NotFound Raw URL: %s\n", r.URL.Raw)
+	w.WriteHeader(http.StatusNotFound)
+	return
 }
 
-func (f *Frontend) Start() error {
-	go func() {
-		err := f.server.ListenAndServe()
-		f.shutdownChan <- err.Error()
-	}()
-	return nil
-}
-
-func (f *Frontend) ShutdownChan() chan string {
+func (f *Frontend) ShutdownChan() chan error {
 	return f.shutdownChan
 }
 
@@ -40,9 +63,8 @@ type FeedWithRequest struct {
 	Req *http.Request
 }
 
-func UserFeed(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r) // FIXME this is one massive lock and i hate it.
-	userId := PlausibleUserId(vars["user_id"])
+func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
+	userId := PlausibleUserId(r.Form.Get("user_id"))
 	if userId == "" {
 		// TODO: flash[:notice] thing
 		// user name seems invalid
@@ -75,7 +97,7 @@ func UserFeed(w http.ResponseWriter, r *http.Request) {
 
 var askForURLTemplate = template.Must(template.ParseFile("ask_for_url.template.html"))
 
-func AskForURL(w http.ResponseWriter, r *http.Request) {
+func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err := askForURLTemplate.Execute(w, nil)
 	if err != nil {
@@ -83,15 +105,7 @@ func AskForURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func EnqueueURLOrUserId(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		log.Printf("client error on %s: %s\n", r.URL.Raw, err)
-		// TODO: flash[:notice] thing
-		http.Redirect(w, r, "/", http.StatusFound)
-		return
-	}
-
+func (f *Frontend) EnqueueURLOrUserId(w http.ResponseWriter, r *http.Request) {
 	urlOrUserId := r.FormValue("url_or_user_id")
 	if urlOrUserId == "" {
 		// TODO: flash[:notice] thing
