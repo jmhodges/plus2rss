@@ -234,7 +234,6 @@ func (a *JSONActivity) ActorName() string {
 }
 
 func (a *JSONActivity) Attachments() []Attachment {
-	log.Printf("Welp %#v\n", a.Object.JAttachments)
 	as := make([]Attachment, len(a.Object.JAttachments))
 	for i, ao := range a.Object.JAttachments {
 		as[i] = ao
