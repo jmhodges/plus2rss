@@ -25,50 +25,14 @@ type Feed interface {
 	Items() []Activity
 }
 
-type Activity interface {
-	Verb() string
-	Updated() string
-	Published() string
-	Content() string
-	Title() string
-	Id() string
-	URL() string
-	ActorName() string
-	Attachments() []Attachment
-}
-
-type Attachment interface {
-	ObjectType() string
-	DisplayName() string
-	Id() string
-	Content() string
-	URL() string
-	Image() Image
-	FullImage() Image
-	IsVideo() bool
-	IsPhoto() bool
-	IsArticle() bool
-}
-
-type Image interface {
-	URL() string
-	Type() string
-	Height() int64
-	Width() int64
-}
-
-type Embed interface {
-	URL() string
-	Type() string
-}
-
-var FeedStore FeedStorage
-
 type InvalidStatusCode int
 
 func (isc InvalidStatusCode) Error() string {
 	return fmt.Sprintf("Error status code from Google+: %d", int(isc))
 }
+
+// This global sucks.
+var FeedStore FeedStorage
 
 // TODO An obvious place to cache data.
 func (f *FeedRetriever) Find(userId string) (Feed, error) {
@@ -114,6 +78,43 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
 
 	r.Body.Close()
 	return body.Bytes(), err
+}
+
+type Activity interface {
+	Verb() string
+	Updated() string
+	Published() string
+	Content() string
+	Title() string
+	Id() string
+	URL() string
+	ActorName() string
+	Attachments() []Attachment
+}
+
+type Attachment interface {
+	ObjectType() string
+	DisplayName() string
+	Id() string
+	Content() string
+	URL() string
+	Image() Image
+	FullImage() Image
+	IsVideo() bool
+	IsPhoto() bool
+	IsArticle() bool
+}
+
+type Image interface {
+	URL() string
+	Type() string
+	Height() int64
+	Width() int64
+}
+
+type Embed interface {
+	URL() string
+	Type() string
 }
 
 type JSONImage struct {
