@@ -14,6 +14,9 @@ type Frontend struct {
 
 var userIdPath = regexp.MustCompile(`/u/(\d+)`)
 
+//   GET / -> AskForURL (HEAD, too)
+//   GET /u/some_id_number -> UserFeed() (HEAD, too)
+//   POST /plus/enqueue -> EnqueueURLOrUserId
 func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.Host != f.host {
