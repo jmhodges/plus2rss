@@ -15,8 +15,8 @@ type Frontend struct {
 var userIdPath = regexp.MustCompile(`/u/(\d+)`)
 
 //   GET / -> AskForURL (HEAD, too)
-//   GET /u/some_id_number -> UserFeed() (HEAD, too)
-//   POST /plus/enqueue -> EnqueueURLOrUserId
+//   GET /u/some_user_id -> UserFeed() (HEAD, too)
+//   POST /plus/enqueue -> CheckURLOrUserId
 func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.Host != f.host {
@@ -39,7 +39,7 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path == "/plus/enqueue" && r.Method == "POST" {
-		f.EnqueueURLOrUserId(w, r)
+		f.CheckURLOrUserId(w, r)
 		return
 	}
 
@@ -108,7 +108,7 @@ func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (f *Frontend) EnqueueURLOrUserId(w http.ResponseWriter, r *http.Request) {
+func (f *Frontend) CheckURLOrUserId(w http.ResponseWriter, r *http.Request) {
 	urlOrUserId := r.FormValue("url_or_user_id")
 	if urlOrUserId == "" {
 		// TODO: flash[:notice] thing
