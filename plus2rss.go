@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -40,6 +42,9 @@ func main() {
 }
 
 func feedStorage(clientSecret string) (FeedStorage, error) {
+	if strings.Trim(clientSecret, " \r\n\t") == "" {
+		return nil, errors.New("Google API client secret cannot be blank")
+	}
 	retriever := &FeedRetriever{http.DefaultClient, clientSecret}
 	return retriever, nil
 }
