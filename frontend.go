@@ -8,7 +8,7 @@ import (
 )
 
 type Frontend struct {
-	host string
+	host         string
 	shutdownChan chan error
 }
 
@@ -29,7 +29,7 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uMatch := userIdPath.FindAllStringSubmatch(r.URL.Path, -1)
-	if len(uMatch) > 0  && len(uMatch[0][1]) > 0 && (r.Method == "GET" || r.Method == "HEAD") {
+	if len(uMatch) > 0 && len(uMatch[0][1]) > 0 && (r.Method == "GET" || r.Method == "HEAD") {
 		r.Form.Add("user_id", uMatch[0][1])
 		f.UserFeed(w, r)
 		return
@@ -40,7 +40,7 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path == "/"  && (r.Method == "GET" || r.Method == "HEAD") {
+	if r.URL.Path == "/" && (r.Method == "GET" || r.Method == "HEAD") {
 		f.AskForURL(w, r)
 		return
 	}

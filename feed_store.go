@@ -39,7 +39,7 @@ type Activity interface {
 type Attachment interface {
 	ObjectType() string
 	DisplayName() string
-	Id()          string
+	Id() string
 	Content() string
 	URL() string
 	Image() Image
@@ -125,20 +125,20 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
 
 type JSONImage struct {
 	JURL    string `json:"url"`
-	JType   string `json:"type"` // optional (e.g. profile images)
-	JHeight int64 `json:"height"`  // optional (e.g. profile images)
-	JWidth  int64 `json:"width"` // optional (e.g. profile images)
+	JType   string `json:"type"`   // optional (e.g. profile images)
+	JHeight int64  `json:"height"` // optional (e.g. profile images)
+	JWidth  int64  `json:"width"`  // optional (e.g. profile images)
 }
 
 // Embeddable video link
 type JSONAttachment struct {
-	JObjectType string `json:"objectType"` // "video", "photo", or "article"
-	JDisplayName string `json:"displayName"`
-	JId string `json:"id"`
-	JContent string `json:"content"` // snippet of text if ObjectType == "article"
-	JURL string `json:"url"` // link to the attachment, is of type text/html
-	JImage *JSONImage `json:"image"`
-	JFullImage *JSONImage `json:"fullImage"`
+	JObjectType  string     `json:"objectType"` // "video", "photo", or "article"
+	JDisplayName string     `json:"displayName"`
+	JId          string     `json:"id"`
+	JContent     string     `json:"content"` // snippet of text if ObjectType == "article"
+	JURL         string     `json:"url"`     // link to the attachment, is of type text/html
+	JImage       *JSONImage `json:"image"`
+	JFullImage   *JSONImage `json:"fullImage"`
 }
 
 type JSONActor struct {
@@ -149,11 +149,11 @@ type JSONActor struct {
 }
 
 type JSONPlusObject struct {
-	ObjectType string
-	Id          string
-	Actor       JSONActor
-	Content     string
-	URL         string
+	ObjectType   string
+	Id           string
+	Actor        JSONActor
+	Content      string
+	URL          string
 	JAttachments []*JSONAttachment `json:"attachments"`
 	// TODO: replies, plusoners, resharers
 }
@@ -263,13 +263,13 @@ func (a *JSONAttachment) FullImage() Image {
 	return a.JFullImage
 }
 
-func(a *JSONAttachment) IsVideo() bool {
+func (a *JSONAttachment) IsVideo() bool {
 	return a.JObjectType == "video"
 }
-func(a *JSONAttachment) IsPhoto() bool {
+func (a *JSONAttachment) IsPhoto() bool {
 	return a.JObjectType == "photo"
 }
-func(a *JSONAttachment) IsArticle() bool {
+func (a *JSONAttachment) IsArticle() bool {
 	return a.JObjectType == "article"
 }
 
