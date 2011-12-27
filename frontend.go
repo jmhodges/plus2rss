@@ -121,9 +121,11 @@ func (f *Frontend) EnqueueURLOrUserId(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+var Body404 = []byte("No such feed.\n")
+
 func NoSuchFeed(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("No such feed.\n"))
+	w.Write(Body404)
 }
 
 var justUserIdR = regexp.MustCompile(`^\d+$`)
