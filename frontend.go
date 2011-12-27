@@ -12,7 +12,22 @@ type Frontend struct {
 	shutdownChan chan error
 }
 
+type FeedWithRequest struct {
+	Feed
+	Req *http.Request
+}
+
 var userIdPath = regexp.MustCompile(`/u/(\d+)`)
+
+var askForURLTemplate = template.Must(template.ParseFiles("ask_for_url.template.html"))
+var feedTemplate = template.Must(template.ParseFiles("feed.template.xml"))
+
+var justUserIdR = regexp.MustCompile(`^\d+$`)
+var plusUrlR = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
+
+var Body404 = []byte("No such feed.\n")
+var Body500 = []byte("Something went wrong. Wait a minute, please.\n")
+var Body503 = []byte("Taking too long.\n")
 
 //   GET / -> AskForURL (HEAD, too)
 //   GET /u/some_user_id -> UserFeed() (HEAD, too)
@@ -59,13 +74,6 @@ func (f *Frontend) ShutdownChan() chan error {
 }
 
 // Handlers
-var feedTemplate = template.Must(template.ParseFiles("feed.template.xml"))
-
-type FeedWithRequest struct {
-	Feed
-	Req *http.Request
-}
-
 func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 	userId := PlausibleUserId(r.Form.Get("user_id"))
 	if userId == "" {
@@ -95,10 +103,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("UserFeed template execute: %s", err)
 	}
-
 }
-
-var askForURLTemplate = template.Must(template.ParseFiles("ask_for_url.template.html"))
 
 func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -129,15 +134,10 @@ func (f *Frontend) CheckURLOrUserId(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-var Body404 = []byte("No such feed.\n")
-
 func NoSuchFeed(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	w.Write(Body404)
 }
-
-var justUserIdR = regexp.MustCompile(`^\d+$`)
-var plusUrlR = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
 
 func PlausibleUserId(urlOrUserId string) string {
 	if justUserIdR.MatchString(urlOrUserId) {
@@ -150,14 +150,10 @@ func PlausibleUserId(urlOrUserId string) string {
 	return ""
 }
 
-var Body500 = []byte("Something went wrong. Wait a minute, please.\n")
-
 func Sigh500(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(Body500)
 }
-
-var Body503 = []byte("Taking too long.\n")
 
 func Sigh503(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
