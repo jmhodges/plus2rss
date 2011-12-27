@@ -163,7 +163,7 @@ type JSONActivity struct {
 	Object          *JSONPlusObject
 	Annotation      string
 	CrosspostSource string `json:"crosspostSource"`
-	// TODO: provider, access, attachments
+	// TODO: provider, access
 }
 
 type JSONFeed struct {
