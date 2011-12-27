@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -104,23 +105,15 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
 		return nil, InvalidStatusCode(r.StatusCode)
 	}
 
-	defer r.Body.Close()
+	body := new(bytes.Buffer)
+	_, err = io.Copy(body, r.Body)
 
-	var body []byte
-	var readErr error
-	var n int
-	for readErr == nil {
-		suffix := make([]byte, 2e5) // 2K
-		n, readErr = r.Body.Read(suffix)
-		if n < len(suffix) {
-			suffix = suffix[:n]
-		}
-		body = append(body, suffix...)
-	}
 	if err != nil && err != io.EOF {
 		return nil, err
 	}
-	return body, err
+
+	r.Body.Close()
+	return body.Bytes(), err
 }
 
 type JSONImage struct {
