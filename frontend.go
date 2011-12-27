@@ -111,13 +111,18 @@ func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
 func (f *Frontend) CheckURLOrUserId(w http.ResponseWriter, r *http.Request) {
 	urlOrUserId := r.FormValue("url_or_user_id")
 	if urlOrUserId == "" {
-		// TODO: flash[:notice] thing
-		// user name seems invalid
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 
 	userId := PlausibleUserId(urlOrUserId)
+
+	if userId == "" {
+		// TODO: flash[:notice] thing
+		// user name seems invalid
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
 
 	http.Redirect(w, r, "/u/"+userId, http.StatusFound)
 
