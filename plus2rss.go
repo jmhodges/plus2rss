@@ -4,11 +4,12 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 )
 
 const (
-	frontendReadTimeoutNanos  = 4e8 // 400 millis
-	frontendWriteTimeoutNanos = 4e8 // 400 millis
+	frontendReadTimeoutNanos  = time.Duration(4e8) // 400 millis
+	frontendWriteTimeoutNanos = time.Duration(4e8) // 400 millis
 )
 
 type Service interface {
@@ -43,7 +44,7 @@ func feedStorage(clientSecret string) (FeedStorage, error) {
 	return retriever, nil
 }
 
-func frontend(host, addr string, readTimeout, writeTimeout int64) (*Frontend, *http.Server) {
+func frontend(host, addr string, readTimeout, writeTimeout time.Duration) (*Frontend, *http.Server) {
 	f := &Frontend{host, make(chan error)}
 	server := &http.Server{addr, f, readTimeout, writeTimeout, 0}
 

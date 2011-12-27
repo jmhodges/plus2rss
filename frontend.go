@@ -56,7 +56,7 @@ func (f *Frontend) ShutdownChan() chan error {
 }
 
 // Handlers
-var feedTemplate = template.Must(template.ParseFile("feed.template.xml"))
+var feedTemplate = template.Must(template.ParseFiles("feed.template.xml"))
 
 type FeedWithRequest struct {
 	Feed
@@ -95,7 +95,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 
 }
 
-var askForURLTemplate = template.Must(template.ParseFile("ask_for_url.template.html"))
+var askForURLTemplate = template.Must(template.ParseFiles("ask_for_url.template.html"))
 
 func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
