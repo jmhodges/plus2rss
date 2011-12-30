@@ -10,6 +10,8 @@ import (
 type Frontend struct {
 	host         string
 	shutdownChan chan error
+	askForURLTemplate *template.Template
+	feedTemplate *template.Template
 }
 
 type FeedWithRequest struct {
@@ -19,15 +21,19 @@ type FeedWithRequest struct {
 
 var userIdPath = regexp.MustCompile(`/u/(\d+)`)
 
-var askForURLTemplate = template.Must(template.ParseFiles("ask_for_url.template.html"))
-var feedTemplate = template.Must(template.ParseFiles("feed.template.xml"))
-
 var justUserIdR = regexp.MustCompile(`^\d+$`)
 var plusUrlR = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
 
 var Body404 = []byte("No such feed.\n")
 var Body500 = []byte("Something went wrong. Wait a minute, please.\n")
 var Body503 = []byte("Taking too long.\n")
+
+func NewFrontend(host string, templateDir string) *Frontend {
+	ch := make(chan error)
+	askForURLTemplate := template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
+	feedTemplate := template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
+	return &Frontend{host, ch, askForURLTemplate, feedTemplate}
+}
 
 //   GET / -> AskForURL (HEAD, too)
 //   GET /u/some_user_id -> UserFeed() (HEAD, too)
@@ -99,7 +105,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", `application/atom+xml; charset="utf-8"`)
 	w.WriteHeader(http.StatusOK)
 	feedWithR := &FeedWithRequest{feed, r}
-	err = feedTemplate.Execute(w, feedWithR)
+	err = f.feedTemplate.Execute(w, feedWithR)
 	if err != nil {
 		log.Printf("UserFeed template execute: %s", err)
 	}
@@ -107,7 +113,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 
 func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	err := askForURLTemplate.Execute(w, nil)
+	err := f.askForURLTemplate.Execute(w, nil)
 	if err != nil {
 		log.Printf("AskForUrl template execute: %s", err)
 	}

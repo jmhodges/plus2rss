@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
+	"io"
 	"log"
+	"os"
 	"net/http"
 	"strings"
 	"time"
@@ -13,43 +16,62 @@ type Service interface {
 	ShutdownChan() chan string
 }
 
+
 // TODO: fix timestamps, add attachments, handle posts that were reshares
 func main() {
 	var frontendHost string
 	var frontendAddr string
-	var simpleKey string
+	var simpleKeyFile string
+	var templateDir string
 	var frontendReadTimeout = time.Duration(4e8) // 400 millis
 	var frontendWriteTimeout = time.Duration(4e8) // 400 millis
 
 	flag.StringVar(&frontendHost, "vhost", "localhost:6543", "the virtual Host header to respond to in the frontend")
 	flag.StringVar(&frontendAddr, "http", "localhost:6543", "address to run the frontend o (e.g. :6543, localhost:4321)")
-	flag.StringVar(&simpleKey, "simpleKey", "", "Simple API Access key for Google")
+	flag.StringVar(&simpleKeyFile, "simpleKeyFile", "", "File containing simple API access key for Google")
+	flag.StringVar(&templateDir, "templateDir", ".", "Directory containing the templates to render html and feeds")
+
 	flag.DurationVar(&frontendReadTimeout, "frontendReadTimeout", frontendReadTimeout, "frontend http server's socket read timeout")
 	flag.DurationVar(&frontendWriteTimeout, "frontendWriteTimeout", frontendWriteTimeout, "frontend http server's socket write timeout")
 	flag.Parse()
 
-	fs, err := feedStorage(simpleKey)
+	fs, err := feedStorage(simpleKeyFile)
 	if err != nil {
 		log.Fatalf("Could not boot feed storage: %s", err)
 	}
 	FeedStore = fs
 
-	f, server := frontend(frontendHost, frontendAddr, frontendReadTimeout, frontendWriteTimeout)
+	f, server := frontend(frontendHost, frontendAddr, templateDir, frontendReadTimeout, frontendWriteTimeout)
 	_ = server
 	err = <-f.ShutdownChan()
 	log.Printf("frontend shutdown: %s", err)
 }
 
-func feedStorage(simpleKey string) (FeedStorage, error) {
-	if strings.Trim(simpleKey, " \r\n\t") == "" {
-		return nil, errors.New("Google API client secret cannot be blank")
+func feedStorage(simpleKeyFile string) (FeedStorage, error) {
+	if strings.Trim(simpleKeyFile, " \r\n\t") == "" {
+		return nil, errors.New("Google API client simple key file must be given")
+	}
+	file, err := os.Open(simpleKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	b := bufio.NewReader(file)
+	simpleKey := ""
+	isPrefix := true
+	line := []byte{}
+	for isPrefix {
+		line, isPrefix, err = b.ReadLine()
+		simpleKey += string(line)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
 	}
 	retriever := &FeedRetriever{http.DefaultClient, simpleKey}
 	return retriever, nil
 }
 
-func frontend(host, addr string, readTimeout, writeTimeout time.Duration) (*Frontend, *http.Server) {
-	f := &Frontend{host, make(chan error)}
+func frontend(host, addr, templateDir string, readTimeout, writeTimeout time.Duration) (*Frontend, *http.Server) {
+	f := NewFrontend(host, templateDir)
 	server := &http.Server{addr, f, readTimeout, writeTimeout, 0}
 
 	go func() {
