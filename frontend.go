@@ -9,6 +9,7 @@ import (
 
 type Frontend struct {
 	host         string
+	feedStore    FeedStorage
 	shutdownChan chan error
 	askForURLTemplate *template.Template
 	feedTemplate *template.Template
@@ -28,11 +29,11 @@ var Body404 = []byte("No such feed.\n")
 var Body500 = []byte("Something went wrong. Wait a minute, please.\n")
 var Body503 = []byte("Taking too long.\n")
 
-func NewFrontend(host string, templateDir string) *Frontend {
+func NewFrontend(fs FeedStorage, host string, templateDir string) *Frontend {
 	ch := make(chan error)
 	askForURLTemplate := template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
 	feedTemplate := template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
-	return &Frontend{host, ch, askForURLTemplate, feedTemplate}
+	return &Frontend{host, fs, ch, askForURLTemplate, feedTemplate}
 }
 
 //   GET / -> AskForURL (HEAD, too)
@@ -89,7 +90,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	feed, err := FeedStore.Find(userId)
+	feed, err := f.feedStore.Find(userId)
 
 	if err != nil {
 		log.Printf("Finding the feed for a user blew up: %s", err)

@@ -14,9 +14,6 @@ type Service interface {
 	ShutdownChan() chan string
 }
 
-// This global sucks.
-var FeedStore FeedStorage
-
 // TODO: fix timestamps, add attachments, handle posts that were reshares
 func main() {
 	var frontendHost string
@@ -39,9 +36,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not boot feed storage: %s", err)
 	}
-	FeedStore = fs
 
-	f, server := frontend(frontendHost, frontendAddr, templateDir, frontendReadTimeout, frontendWriteTimeout)
+	f, server := frontend(fs, frontendHost, frontendAddr, templateDir, frontendReadTimeout, frontendWriteTimeout)
 	_ = server
 	err = <-f.ShutdownChan()
 	log.Printf("frontend shutdown: %s", err)
@@ -60,8 +56,8 @@ func feedStorage(simpleKeyFile string) (FeedStorage, error) {
 	return retriever, nil
 }
 
-func frontend(host, addr, templateDir string, readTimeout, writeTimeout time.Duration) (*Frontend, *http.Server) {
-	f := NewFrontend(host, templateDir)
+func frontend(fs FeedStorage, host, addr, templateDir string, readTimeout, writeTimeout time.Duration) (*Frontend, *http.Server) {
+	f := NewFrontend(fs, host, templateDir)
 	server := &http.Server{addr, f, readTimeout, writeTimeout, 0}
 
 	go func() {
