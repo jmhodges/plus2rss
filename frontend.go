@@ -70,7 +70,7 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("NotFound Vars: %#v\n", r.Form)
-	log.Printf("NotFound Raw URL: %s\n", r.URL.Raw)
+	log.Printf("NotFound Raw URL: %s\n", r.URL)
 	w.WriteHeader(http.StatusNotFound)
 	return
 }
