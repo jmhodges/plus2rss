@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"flag"
-	"io"
+	"io/ioutil"
 	"log"
-	"os"
 	"net/http"
 	"strings"
 	"time"
@@ -53,21 +51,11 @@ func feedStorage(simpleKeyFile string) (FeedStorage, error) {
 	if strings.Trim(simpleKeyFile, " \r\n\t") == "" {
 		return nil, errors.New("Google API client simple key file must be given")
 	}
-	file, err := os.Open(simpleKeyFile)
+	simpleKeySlice, err := ioutil.ReadFile(simpleKeyFile)
 	if err != nil {
 		return nil, err
 	}
-	b := bufio.NewReader(file)
-	simpleKey := ""
-	isPrefix := true
-	line := []byte{}
-	for isPrefix {
-		line, isPrefix, err = b.ReadLine()
-		simpleKey += string(line)
-		if err != nil && err != io.EOF {
-			return nil, err
-		}
-	}
+	simpleKey := strings.Trim(string(simpleKeySlice), " \r\n\t")
 	retriever := &FeedRetriever{http.DefaultClient, simpleKey}
 	return retriever, nil
 }
