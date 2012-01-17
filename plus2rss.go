@@ -16,6 +16,8 @@ type Service interface {
 	ShutdownChan() chan string
 }
 
+// This global sucks.
+var FeedStore FeedStorage
 
 // TODO: fix timestamps, add attachments, handle posts that were reshares
 func main() {

@@ -31,9 +31,6 @@ func (isc InvalidStatusCode) Error() string {
 	return fmt.Sprintf("Error status code from Google+: %d", int(isc))
 }
 
-// This global sucks.
-var FeedStore FeedStorage
-
 // TODO An obvious place to cache data.
 func (f *FeedRetriever) Find(userId string) (Feed, error) {
 	jsdata, err := f.retrieve(userId)
