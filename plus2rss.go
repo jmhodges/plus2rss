@@ -58,7 +58,7 @@ func feedStorage(simpleKeyFile string) (FeedStorage, error) {
 
 func frontend(fs FeedStorage, host, addr, templateDir string, readTimeout, writeTimeout time.Duration) (*Frontend, *http.Server) {
 	f := NewFrontend(fs, host, templateDir)
-	server := &http.Server{addr, f, readTimeout, writeTimeout, 0}
+	server := &http.Server{addr, f, readTimeout, writeTimeout, 0, nil}
 
 	go func() {
 		err := server.ListenAndServe()
