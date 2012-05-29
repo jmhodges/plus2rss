@@ -20,8 +20,8 @@ func main() {
 	var frontendAddr string
 	var simpleKeyFile string
 	var templateDir string
-	var frontendReadTimeout = time.Duration(4e8) // 400 millis
-	var frontendWriteTimeout = time.Duration(4e8) // 400 millis
+	var frontendReadTimeout = time.Duration(400 * time.Millisecond)
+	var frontendWriteTimeout = time.Duration(400 * time.Millisecond)
 
 	flag.StringVar(&frontendHost, "vhost", "localhost:6543", "the virtual Host header to respond to in the frontend")
 	flag.StringVar(&frontendAddr, "http", "localhost:6543", "address to run the frontend o (e.g. :6543, localhost:4321)")
