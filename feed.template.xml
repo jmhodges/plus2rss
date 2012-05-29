@@ -4,8 +4,8 @@
   <id>{{.Id | html}}</id>
   <updated>{{.Updated | html}}</updated>
   {{/* Should use frontendHost, etc. */}}
-  <link href="http://{{.Req.Host|html}}{{.Req.URL.Path|html}}" rel="self" />
-  <link href="http://{{.Req.Host|html}}" />
+  <link href="{{.AtomURL|html}}" rel="self" />
+  <link href="{{.MetaURL|html}}" />
   {{ range .Items }}
   <entry>
     <title type="html">{{.Title | html }}</title>

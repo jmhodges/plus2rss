@@ -9,6 +9,16 @@ import (
 	"net/http"
 )
 
+
+type InvalidStatusCode struct {
+	code int
+	urlNoKey string
+}
+
+func (isc *InvalidStatusCode) Error() string {
+	return fmt.Sprintf("Error status code %d from Google+ url %s", isc.code, isc.urlNoKey)
+}
+
 type FeedRetriever struct {
 	Client *http.Client
 	Key    string
@@ -23,37 +33,53 @@ type Feed interface {
 	Id() string
 	Updated() string
 	Items() []Activity
+	ActorName() string
+	ActorId() string
 }
 
-type InvalidStatusCode int
-
-func (isc InvalidStatusCode) Error() string {
-	return fmt.Sprintf("Error status code from Google+: %d", int(isc))
+type ActorFeed struct {
+	actor *JSONActor
+	feed  *JSONFeed
 }
 
 // TODO An obvious place to cache data.
 func (f *FeedRetriever) Find(userId string) (Feed, error) {
-	jsdata, err := f.retrieve(userId)
+	personData, err := f.retrievePerson(userId)
+	if err != nil || personData == nil {
+		return nil, err
+	}
+	actor := new(JSONActor)
+	err = json.Unmarshal(personData, actor)
 	if err != nil {
 		return nil, err
 	}
-	if jsdata == nil {
-		return nil, nil
+	jsdata, err := f.retrieveActivities(userId)
+	if err != nil || jsdata == nil {
+		return nil, err
 	}
 	feed := new(JSONFeed)
 	err = json.Unmarshal(jsdata, feed)
 	if err != nil {
 		return nil, err
 	}
-	return feed, nil
+	return &ActorFeed{actor, feed}, nil
 }
 
-func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
+func (f *FeedRetriever) retrievePerson(userId string) ([]byte, error) {
+	urlNoKey :=  "https://www.googleapis.com/plus/v1/people/" + userId + "?key="
+	log.Printf("Person: %s", urlNoKey)
+	return f.get(urlNoKey)
+}
+
+func (f *FeedRetriever) retrieveActivities(userId string) ([]byte, error) {
 	// There's a query escape, but not a url escape. Wha?
 	urlNoKey := "https://www.googleapis.com/plus/v1/people/" + userId + "/activities/public?key="
-	url := urlNoKey + f.Key
-	log.Printf("Plus Get: %s", urlNoKey)
+	log.Printf("List Public Activities: %s", urlNoKey)
+	return f.get(urlNoKey)
+}
 
+func (f *FeedRetriever) get(urlNoKey string) ([]byte, error) {
+	url := urlNoKey + f.Key
 	r, err := f.Client.Get(url)
 	if err != nil {
 		return nil, err
@@ -63,7 +89,7 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
 	}
 
 	if r.StatusCode != 200 {
-		return nil, InvalidStatusCode(r.StatusCode)
+		return nil, &InvalidStatusCode{r.StatusCode, urlNoKey}
 	}
 
 	body := new(bytes.Buffer)
@@ -76,7 +102,6 @@ func (f *FeedRetriever) retrieve(userId string) ([]byte, error) {
 	r.Body.Close()
 	return body.Bytes(), err
 }
-
 type Activity interface {
 	Verb() string
 	Updated() string
@@ -133,10 +158,10 @@ type JSONAttachment struct {
 }
 
 type JSONActor struct {
-	Id          string
-	DisplayName string
-	URL         string
-	Image       *JSONImage
+	Id          string `json:"id"`
+	DisplayName string `json:"displayName"`
+	URL         string `json:"url"`
+	Image       *JSONImage `json:"image"`
 }
 
 type JSONPlusObject struct {
@@ -169,27 +194,34 @@ type JSONFeed struct {
 	JUpdated string          `json:"updated"`
 	JId      string          `json:"id"`
 	JItems   []*JSONActivity `json:"items"`
-	Actor    JSONActor
 }
 
-func (j *JSONFeed) Title() string {
-	return j.JTitle
+func (j *ActorFeed) Title() string {
+	return j.feed.JTitle
 }
 
-func (j *JSONFeed) Id() string {
-	return j.JId
+func (j *ActorFeed) Id() string {
+	return j.feed.JId
 }
 
-func (j *JSONFeed) Updated() string {
-	return j.JUpdated
+func (j *ActorFeed) Updated() string {
+	return j.feed.JUpdated
 }
 
-func (j *JSONFeed) Items() []Activity {
-	acts := make([]Activity, 0, len(j.JItems))
-	for _, a := range j.JItems {
+func (j *ActorFeed) Items() []Activity {
+	acts := make([]Activity, 0, len(j.feed.JItems))
+	for _, a := range j.feed.JItems {
 		acts = append(acts, a)
 	}
 	return acts
+}
+
+func (j *ActorFeed) ActorName() string {
+	return j.actor.DisplayName
+}
+
+func (j *ActorFeed) ActorId() string {
+	return j.actor.Id
 }
 
 func (a *JSONActivity) Verb() string {

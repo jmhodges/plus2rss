@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"net/http"
 	"regexp"
@@ -13,15 +14,16 @@ type Frontend struct {
 	shutdownChan chan error
 	askForURLTemplate *template.Template
 	feedTemplate *template.Template
+	feedMetaTemplate *template.Template
 }
 
-type FeedWithRequest struct {
+type FeedView struct {
 	Feed
 	Req *http.Request
 }
 
-var userIdPath = regexp.MustCompile(`/u/(\d+)`)
-
+var userIdPath = regexp.MustCompile(`/u/(\d+)$`)
+var userIdMetaPath = regexp.MustCompile(`/u_meta/(\d+)$`)
 var justUserIdR = regexp.MustCompile(`^\d+$`)
 var plusUrlR = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
 
@@ -33,11 +35,13 @@ func NewFrontend(fs FeedStorage, host string, templateDir string) *Frontend {
 	ch := make(chan error)
 	askForURLTemplate := template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
 	feedTemplate := template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
-	return &Frontend{host, fs, ch, askForURLTemplate, feedTemplate}
+	feedMetaTemplate := template.Must(template.ParseFiles(templateDir + "/feed_meta.template.html"))
+	return &Frontend{host, fs, ch, askForURLTemplate, feedTemplate, feedMetaTemplate}
 }
 
 //   GET / -> AskForURL (HEAD, too)
 //   GET /u/some_user_id -> UserFeed() (HEAD, too)
+//   GET /u_meta/some_user_id -> UserFeedMeta() (HEAD, too)
 //   POST /plus/enqueue -> CheckURLOrUserId
 func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
@@ -57,6 +61,13 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(uMatch) > 0 && len(uMatch[0][1]) > 0 && (r.Method == "GET" || r.Method == "HEAD") {
 		r.Form.Add("user_id", uMatch[0][1])
 		f.UserFeed(w, r)
+		return
+	}
+
+	uMetaMatch := userIdMetaPath.FindAllStringSubmatch(r.URL.Path, -1)
+	if len(uMetaMatch) > 0 && len(uMetaMatch[0][1]) > 0 && (r.Method == "GET" || r.Method == "HEAD") {
+		r.Form.Add("user_id", uMetaMatch[0][1])
+		f.UserFeedMeta(w, r)
 		return
 	}
 
@@ -81,13 +92,51 @@ func (f *Frontend) ShutdownChan() chan error {
 }
 
 // Handlers
+func (f *Frontend) UserFeedMeta(w http.ResponseWriter, r *http.Request) {
+	feed := f.verifyUserOrErrorResponse(w, r)
+	if feed == nil {
+		return
+	}
+
+	feedView := &FeedView{feed, r}
+	buf := new(bytes.Buffer)
+	err := f.feedMetaTemplate.Execute(buf, feedView)
+	if err != nil {
+		log.Printf("Error in UserFeedMeta template: %s", err)
+		Sigh500(w, r)
+		return
+	}
+	w.Header().Add("Content-Type", `text/html; charset="utf-8"`)
+	w.WriteHeader(http.StatusOK)
+	w.Write(buf.Bytes())
+}
+
 func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
+	feed := f.verifyUserOrErrorResponse(w, r)
+	if feed == nil {
+		return
+	}
+
+	feedView := &FeedView{feed, r}
+	buf := new(bytes.Buffer)
+	err := f.feedTemplate.Execute(buf, feedView)
+	if err != nil {
+		log.Printf("Error in UserFeed template: %s", err)
+		Sigh500(w, r)
+		return
+	}
+	w.Header().Add("Content-Type", `application/atom+xml; charset="utf-8"`)
+	w.WriteHeader(http.StatusOK)
+	w.Write(buf.Bytes())
+}
+
+func (f *Frontend) verifyUserOrErrorResponse(w http.ResponseWriter, r *http.Request) Feed {
 	userId := PlausibleUserId(r.Form.Get("user_id"))
 	if userId == "" {
 		// TODO: flash[:notice] thing
 		// user name seems invalid
 		NoSuchFeed(w, r)
-		return
+		return nil
 	}
 
 	feed, err := f.feedStore.Find(userId)
@@ -95,21 +144,15 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Finding the feed for a user blew up: %s", err)
 		Sigh500(w, r)
-		return
+		return nil
 	}
 
 	if feed == nil {
 		NoSuchFeed(w, r)
-		return
+		return nil
 	}
 
-	w.Header().Add("Content-Type", `application/atom+xml; charset="utf-8"`)
-	w.WriteHeader(http.StatusOK)
-	feedWithR := &FeedWithRequest{feed, r}
-	err = f.feedTemplate.Execute(w, feedWithR)
-	if err != nil {
-		log.Printf("UserFeed template execute: %s", err)
-	}
+	return feed
 }
 
 func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +179,7 @@ func (f *Frontend) CheckURLOrUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/u/"+userId, http.StatusFound)
+	http.Redirect(w, r, "/u_meta/"+userId, http.StatusFound)
 
 	return
 }
@@ -165,4 +208,20 @@ func Sigh500(w http.ResponseWriter, r *http.Request) {
 func Sigh503(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(Body503)
+}
+
+func (fv *FeedView) AtomURL() string {
+	return "http://" + fv.Req.Host + "/u/" + fv.ActorId()
+}
+
+func (fv *FeedView) MetaURL() string {
+	return "http://" + fv.Req.Host + "/u_meta/" + fv.ActorId()
+}
+
+func (fv *FeedView) Title() string {
+	name := fv.Feed.ActorName()
+	if name == "" {
+		name = "Unknown User"
+	}
+	return name + " on Google+"
 }
