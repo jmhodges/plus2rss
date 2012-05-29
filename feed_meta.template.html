@@ -7,10 +7,13 @@
   <body>
     <div class="container">
       <div class="row">
-        Feed url: <code>{{.AtomURL|html}}</code>
+        <h2>Found a matching user</h2>
       </div>
       <div class="row">
-        <a href="http://fusion.google.com/add?source=atgs&feedurl={{.AtomURL|urlquery}}"><img src="http://buttons.googlesyndication.com/fusion/add.gif" alt="Add to Google"></a>
+        <h3>{{.Title | html}}</h3>
+        <p>Add this url to your feed reader:</p>
+        <p><code>{{.AtomURL|html}}</code></p>
+        <p><a href="http://fusion.google.com/add?source=atgs&feedurl={{.AtomURL|urlquery}}"><img src="http://buttons.googlesyndication.com/fusion/add.gif" alt="Add to Google"></a></p>
       </div>
     </div>
   </body>
