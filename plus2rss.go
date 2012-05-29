@@ -32,6 +32,10 @@ func main() {
 	flag.DurationVar(&frontendWriteTimeout, "frontendWriteTimeout", frontendWriteTimeout, "frontend http server's socket write timeout")
 	flag.Parse()
 
+	if simpleKeyFile == "" {
+		log.Fatalf("plus2rss: -simpleKeyFile=FILE is a required command-line argument")
+	}
+
 	fs, err := feedStorage(simpleKeyFile)
 	if err != nil {
 		log.Fatalf("Could not boot feed storage: %s", err)
