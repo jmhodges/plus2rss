@@ -48,9 +48,6 @@ func main() {
 }
 
 func feedStorage(simpleKeyFile string) (FeedStorage, error) {
-	if strings.Trim(simpleKeyFile, " \r\n\t") == "" {
-		return nil, errors.New("Google API client simple key file must be given")
-	}
 	simpleKeySlice, err := ioutil.ReadFile(simpleKeyFile)
 	if err != nil {
 		return nil, err
