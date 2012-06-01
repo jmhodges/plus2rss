@@ -9,12 +9,12 @@ import (
 )
 
 type Frontend struct {
-	host         string
-	feedStore    FeedStorage
-	shutdownChan chan error
+	host              string
+	feedStore         FeedStorage
+	shutdownChan      chan error
 	askForURLTemplate *template.Template
-	feedTemplate *template.Template
-	feedMetaTemplate *template.Template
+	feedTemplate      *template.Template
+	feedMetaTemplate  *template.Template
 }
 
 type FeedView struct {

@@ -9,9 +9,8 @@ import (
 	"net/http"
 )
 
-
 type InvalidStatusCode struct {
-	code int
+	code     int
 	urlNoKey string
 }
 
@@ -66,7 +65,7 @@ func (f *FeedRetriever) Find(userId string) (Feed, error) {
 }
 
 func (f *FeedRetriever) retrievePerson(userId string) ([]byte, error) {
-	urlNoKey :=  "https://www.googleapis.com/plus/v1/people/" + userId + "?key="
+	urlNoKey := "https://www.googleapis.com/plus/v1/people/" + userId + "?key="
 	log.Printf("Person: %s", urlNoKey)
 	return f.get(urlNoKey)
 }
@@ -102,6 +101,7 @@ func (f *FeedRetriever) get(urlNoKey string) ([]byte, error) {
 	r.Body.Close()
 	return body.Bytes(), err
 }
+
 type Activity interface {
 	Verb() string
 	Updated() string
@@ -158,9 +158,9 @@ type JSONAttachment struct {
 }
 
 type JSONActor struct {
-	Id          string `json:"id"`
-	DisplayName string `json:"displayName"`
-	URL         string `json:"url"`
+	Id          string     `json:"id"`
+	DisplayName string     `json:"displayName"`
+	URL         string     `json:"url"`
 	Image       *JSONImage `json:"image"`
 }
 
