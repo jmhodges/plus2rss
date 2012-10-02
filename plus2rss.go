@@ -57,8 +57,7 @@ func frontend(fs FeedStorage, host, addr, templateDir string, readTimeout, write
 	server := &http.Server{addr, f, readTimeout, writeTimeout, 0, nil}
 
 	go func() {
-		err := server.ListenAndServe()
-		f.ShutdownChan() <- err
+		f.ShutdownChan() <- server.ListenAndServe()
 	}()
 	return f
 }
