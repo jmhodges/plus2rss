@@ -68,7 +68,16 @@ func NewFrontendMux(fs FeedStorage, host string, templateDir string) http.Handle
 		f.CheckURLOrUserId(w, r)
 	}))
 
-	return m
+	hf := func(w http.ResponseWriter, r *http.Request) {
+		if r.Host != f.host {
+			log.Printf("Request asked for %s, expected %s", r.Host, f.host)
+			http.Redirect(w, r, "http://"+f.host, 302)
+			return
+		}
+		m.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(hf)
 }
 
 // Handlers
