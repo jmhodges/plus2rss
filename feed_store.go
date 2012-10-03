@@ -23,17 +23,34 @@ type FeedStorage interface {
 	Find(string) (Feed, error)
 }
 
+type personUnion struct {
+	actor *plus.Person
+	err error
+}
+
 // TODO An obvious place to cache data.
 func (f *FeedRetriever) Find(userId string) (Feed, error) {
-	actor, err := f.retrievePerson(userId)
-	if err != nil {
-		return nil, err
-	}
+	ch := make(chan personUnion)
+	go func() {
+		actor, err := f.retrievePerson(userId)
+		if err != nil {
+			log.Printf("ERROR Unable to retrieve user %s: %s", userId, err)
+			ch <- personUnion{nil, err}
+			return
+		}
+		ch <- personUnion{actor, err}
+	}()
+
 	feed, err := f.retrieveActivities(userId)
 	if err != nil {
 		return nil, err
 	}
-	return &ActorFeed{actor, feed}, nil
+
+	u := <-ch
+	if u.err != nil {
+		return nil, u.err
+	}
+	return &ActorFeed{u.actor, feed}, nil
 }
 
 func (f *FeedRetriever) retrievePerson(userId string) (*plus.Person, error) {
