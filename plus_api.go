@@ -222,4 +222,3 @@ func (i *JSONImage) Height() int64 {
 func (i *JSONImage) Width() int64 {
 	return i.pI.Width
 }
-

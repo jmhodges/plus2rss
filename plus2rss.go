@@ -3,6 +3,7 @@ package main
 import (
 	"code.google.com/p/google-api-go-client/plus/v1"
 	"flag"
+	"github.com/rcrowley/go-metrics"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,7 +15,9 @@ type Service interface {
 	ShutdownChan() chan string
 }
 
-const socketTimeout = time.Duration(400 * time.Millisecond)
+const (
+	socketTimeout = time.Duration(400 * time.Millisecond)
+)
 
 var (
 	frontendHost         = flag.String("vhost", "localhost:6543", "the virtual Host header to respond to in the frontend")
@@ -23,6 +26,9 @@ var (
 	templateDir          = flag.String("templateDir", "./templates", "Directory containing the templates to render html and feeds")
 	frontendReadTimeout  = flag.Duration("frontendReadTimeout", socketTimeout, "frontend http server's socket read timeout")
 	frontendWriteTimeout = flag.Duration("frontendWriteTimeout", socketTimeout, "frontend http server's socket write timeout")
+	controlAddr          = flag.String("controlAddr", "localhost:5432", "the address to run the control HTTP server on")
+	registry = metrics.NewRegistry()
+	bootTime = time.Now().UTC()
 )
 
 // TODO: handle posts that were reshares
@@ -33,13 +39,23 @@ func main() {
 		log.Fatalf("plus2rss: -simpleKeyFile=FILE is a required command-line argument")
 	}
 
+	ch := make(chan error)
+	cs := NewStatServer(*controlAddr)
+	go func() {
+		ch <- cs.ListenAndServe()
+	}()
+
 	fs, err := feedStorage(*simpleKeyFile)
 	if err != nil {
 		log.Fatalf("Could not boot feed storage: %s", err)
 	}
 
-	f := frontend(fs, *frontendHost, *frontendAddr, *templateDir, *frontendReadTimeout, *frontendWriteTimeout)
-	err = <-f.ShutdownChan()
+	fr := frontend(fs, *frontendHost, *frontendAddr, *templateDir, *frontendReadTimeout, *frontendWriteTimeout)
+	go func() {
+		ch <- fr.ListenAndServe()
+	}()
+
+	err = <-ch
 	log.Printf("frontend shutdown: %s", err)
 }
 
@@ -58,12 +74,7 @@ func feedStorage(simpleFile string) (FeedStorage, error) {
 	return retriever, nil
 }
 
-func frontend(fs FeedStorage, host, addr, templateDir string, readTimeout, writeTimeout time.Duration) *Frontend {
+func frontend(fs FeedStorage, host, addr, templateDir string, readTimeout, writeTimeout time.Duration) *http.Server {
 	f := NewFrontend(fs, host, templateDir)
-	server := &http.Server{addr, f, readTimeout, writeTimeout, 0, nil}
-
-	go func() {
-		f.ShutdownChan() <- server.ListenAndServe()
-	}()
-	return f
+	return &http.Server{addr, f, readTimeout, writeTimeout, 0, nil}
 }

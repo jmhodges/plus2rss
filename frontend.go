@@ -11,7 +11,6 @@ import (
 type Frontend struct {
 	host              string
 	feedStore         FeedStorage
-	shutdownChan      chan error
 	askForURLTemplate *template.Template
 	feedTemplate      *template.Template
 	feedMetaTemplate  *template.Template
@@ -32,11 +31,10 @@ var Body500 = []byte("Something went wrong. Wait a minute, please.\n")
 var Body503 = []byte("Taking too long.\n")
 
 func NewFrontend(fs FeedStorage, host string, templateDir string) *Frontend {
-	ch := make(chan error)
 	askForURLTemplate := template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
 	feedTemplate := template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
 	feedMetaTemplate := template.Must(template.ParseFiles(templateDir + "/feed_meta.template.html"))
-	return &Frontend{host, fs, ch, askForURLTemplate, feedTemplate, feedMetaTemplate}
+	return &Frontend{host, fs, askForURLTemplate, feedTemplate, feedMetaTemplate}
 }
 
 //   GET / -> AskForURL (HEAD, too)
@@ -85,10 +83,6 @@ func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("NotFound Raw URL: %s\n", r.URL)
 	w.WriteHeader(http.StatusNotFound)
 	return
-}
-
-func (f *Frontend) ShutdownChan() chan error {
-	return f.shutdownChan
 }
 
 // Handlers
