@@ -3,11 +3,12 @@ package main
 import (
 	"bytes"
 	"github.com/bmizerany/pat"
+	html "html/template"
 	"log"
 	"net/http"
 	"regexp"
 	"strings"
-	"text/template"
+	text "text/template"
 )
 
 var (
@@ -24,9 +25,9 @@ var (
 type Frontend struct {
 	host              string
 	feedStore         FeedStorage
-	askForURLTemplate *template.Template
-	feedTemplate      *template.Template
-	feedMetaTemplate  *template.Template
+	askForURLTemplate *html.Template
+	feedMetaTemplate  *html.Template
+	feedTemplate      *text.Template
 }
 
 type FeedView struct {
@@ -39,11 +40,11 @@ type FeedView struct {
 //   GET /u_meta/some_user_id -> UserFeedMeta() (HEAD, too)
 //   POST /plus/enqueue -> CheckURLOrUserId
 func NewFrontendMux(fs FeedStorage, host string, templateDir string) http.Handler {
-	askForURLTemplate := template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
-	feedMetaTemplate := template.Must(template.ParseFiles(templateDir + "/feed_meta.template.html"))
-	feedTemplate := template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
+	askForURLTemplate := html.Must(html.ParseFiles(templateDir + "/ask_for_url.template.html"))
+	feedMetaTemplate := html.Must(html.ParseFiles(templateDir + "/feed_meta.template.html"))
+	feedTemplate := text.Must(text.ParseFiles(templateDir + "/feed.template.xml"))
 	host = strings.TrimRight(host, "/")
-	f := &Frontend{host, fs, askForURLTemplate, feedTemplate, feedMetaTemplate}
+	f := &Frontend{host, fs, askForURLTemplate, feedMetaTemplate, feedTemplate}
 	m := pat.New()
 
 	askForURL := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
