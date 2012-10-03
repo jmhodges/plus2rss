@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	"code.google.com/p/google-api-go-client/plus/v1"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 )
 
 type InvalidStatusCode struct {
@@ -19,8 +16,7 @@ func (isc *InvalidStatusCode) Error() string {
 }
 
 type FeedRetriever struct {
-	Client *http.Client
-	Key    string
+	Client *plus.Service
 }
 
 type FeedStorage interface {
@@ -37,69 +33,31 @@ type Feed interface {
 }
 
 type ActorFeed struct {
-	actor *JSONActor
-	feed  *JSONFeed
+	actor *plus.Person
+	feed  *plus.ActivityFeed
 }
 
 // TODO An obvious place to cache data.
 func (f *FeedRetriever) Find(userId string) (Feed, error) {
-	personData, err := f.retrievePerson(userId)
-	if err != nil || personData == nil {
-		return nil, err
-	}
-	actor := new(JSONActor)
-	err = json.Unmarshal(personData, actor)
+	actor, err := f.retrievePerson(userId)
 	if err != nil {
 		return nil, err
 	}
-	jsdata, err := f.retrieveActivities(userId)
-	if err != nil || jsdata == nil {
-		return nil, err
-	}
-	feed := new(JSONFeed)
-	err = json.Unmarshal(jsdata, feed)
+	feed, err := f.retrieveActivities(userId)
 	if err != nil {
 		return nil, err
 	}
 	return &ActorFeed{actor, feed}, nil
 }
 
-func (f *FeedRetriever) retrievePerson(userId string) ([]byte, error) {
-	urlNoKey := "https://www.googleapis.com/plus/v1/people/" + userId + "?key="
-	log.Printf("Person: %s", urlNoKey)
-	return f.get(urlNoKey)
+func (f *FeedRetriever) retrievePerson(userId string) (*plus.Person, error) {
+	log.Printf("Person: %s", userId)
+	return f.Client.People.Get(userId).Do()
 }
 
-func (f *FeedRetriever) retrieveActivities(userId string) ([]byte, error) {
-	// There's a query escape, but not a url escape. Wha?
-	urlNoKey := "https://www.googleapis.com/plus/v1/people/" + userId + "/activities/public?key="
-	log.Printf("List Public Activities: %s", urlNoKey)
-	return f.get(urlNoKey)
-}
-
-func (f *FeedRetriever) get(urlNoKey string) ([]byte, error) {
-	url := urlNoKey + f.Key
-	r, err := f.Client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	if r.StatusCode == 404 {
-		return nil, nil
-	}
-
-	if r.StatusCode != 200 {
-		return nil, &InvalidStatusCode{r.StatusCode, urlNoKey}
-	}
-
-	body := new(bytes.Buffer)
-	_, err = io.Copy(body, r.Body)
-
-	if err != nil && err != io.EOF {
-		return nil, err
-	}
-
-	r.Body.Close()
-	return body.Bytes(), err
+func (f *FeedRetriever) retrieveActivities(userId string) (*plus.ActivityFeed, error) {
+	log.Printf("List Public Activities of User: %s", userId)
+	return f.Client.Activities.List(userId, "public").Do()
 }
 
 type Activity interface {
@@ -140,21 +98,11 @@ type Embed interface {
 }
 
 type JSONImage struct {
-	JURL    string `json:"url"`
-	JType   string `json:"type"`   // optional (e.g. profile images)
-	JHeight int64  `json:"height"` // optional (e.g. profile images)
-	JWidth  int64  `json:"width"`  // optional (e.g. profile images)
+	pI plus.ActivityObjectAttachmentsImage
 }
 
-// Embeddable video link
 type JSONAttachment struct {
-	JObjectType  string     `json:"objectType"` // "video", "photo", or "article"
-	JDisplayName string     `json:"displayName"`
-	JId          string     `json:"id"`
-	JContent     string     `json:"content"` // snippet of text if ObjectType == "article"
-	JURL         string     `json:"url"`     // link to the attachment, is of type text/html
-	JImage       *JSONImage `json:"image"`
-	JFullImage   *JSONImage `json:"fullImage"`
+	pAO plus.ActivityObjectAttachments
 }
 
 type JSONActor struct {
@@ -175,18 +123,7 @@ type JSONPlusObject struct {
 }
 
 type JSONActivity struct {
-	Kind            string
-	JTitle          string `json:"title"`
-	JPublished      string `json:"published"`
-	JUpdated        string `json:"updated"`
-	JId             string `json:"id"`
-	JURL            string `json:"url"`
-	Actor           JSONActor
-	JVerb           string `json:"verb"`
-	Object          *JSONPlusObject
-	Annotation      string
-	CrosspostSource string `json:"crosspostSource"`
-	// TODO: provider, access
+	pA plus.Activity
 }
 
 type JSONFeed struct {
@@ -197,21 +134,21 @@ type JSONFeed struct {
 }
 
 func (j *ActorFeed) Title() string {
-	return j.feed.JTitle
+	return j.feed.Title
 }
 
 func (j *ActorFeed) Id() string {
-	return j.feed.JId
+	return j.feed.Id
 }
 
 func (j *ActorFeed) Updated() string {
-	return j.feed.JUpdated
+	return j.feed.Updated
 }
 
 func (j *ActorFeed) Items() []Activity {
-	acts := make([]Activity, 0, len(j.feed.JItems))
-	for _, a := range j.feed.JItems {
-		acts = append(acts, a)
+	acts := make([]Activity, len(j.feed.Items))
+	for i, a := range j.feed.Items {
+		acts[i] = &JSONActivity{*a}
 	}
 	return acts
 }
@@ -225,89 +162,91 @@ func (j *ActorFeed) ActorId() string {
 }
 
 func (a *JSONActivity) Verb() string {
-	return a.JVerb
+	return a.pA.Verb
 }
 
 func (a *JSONActivity) Published() string {
-	return a.JPublished
+	return a.pA.Published
 }
 
 func (a *JSONActivity) Updated() string {
-	return a.JUpdated
+	return a.pA.Updated
 }
 
 func (a *JSONActivity) Content() string {
-	return a.Object.Content
+	return a.pA.Object.Content
 }
 
 func (a *JSONActivity) Title() string {
-	return a.JTitle
+	return a.pA.Title
 }
 
 func (a *JSONActivity) Id() string {
-	return a.JId
+	return a.pA.Id
 }
 
 func (a *JSONActivity) URL() string {
-	return a.JURL
+	return a.pA.Url
 }
 
 func (a *JSONActivity) ActorName() string {
-	return a.Actor.DisplayName
+	return a.pA.Actor.DisplayName
 }
 
 func (a *JSONActivity) Attachments() []Attachment {
-	as := make([]Attachment, len(a.Object.JAttachments))
-	for i, ao := range a.Object.JAttachments {
-		as[i] = ao
+	as := make([]Attachment, len(a.pA.Object.Attachments))
+	for i, ao := range a.pA.Object.Attachments {
+		as[i] = &JSONAttachment{*ao}
 	}
 	return as
 }
 
 func (a *JSONAttachment) ObjectType() string {
-	return a.JObjectType
+	return a.pAO.ObjectType
 }
 func (a *JSONAttachment) DisplayName() string {
-	return a.JDisplayName
+	return a.pAO.DisplayName
 }
 func (a *JSONAttachment) Id() string {
-	return a.JId
+	return a.pAO.Id
 }
 func (a *JSONAttachment) Content() string {
-	return a.JContent
+	return a.pAO.Content
 }
 func (a *JSONAttachment) URL() string {
-	return a.JURL
+	return a.pAO.Url
 }
 func (a *JSONAttachment) Image() Image {
-	return a.JImage
+	return &JSONImage{*a.pAO.Image}
 }
 func (a *JSONAttachment) FullImage() Image {
-	return a.JFullImage
+	fi := a.pAO.FullImage
+	ai := plus.ActivityObjectAttachmentsImage{fi.Height, fi.Type, fi.Url, fi.Width}
+	return &JSONImage{ai}
 }
 
 func (a *JSONAttachment) IsVideo() bool {
-	return a.JObjectType == "video"
+	return a.pAO.ObjectType == "video"
 }
 func (a *JSONAttachment) IsPhoto() bool {
-	return a.JObjectType == "photo"
+	return a.pAO.ObjectType == "photo"
 }
 func (a *JSONAttachment) IsArticle() bool {
-	return a.JObjectType == "article"
+	return a.pAO.ObjectType == "article"
 }
 
 func (i *JSONImage) URL() string {
-	return i.JURL
+	return i.pI.Url
 }
 
 func (i *JSONImage) Type() string {
-	return i.JType
+	return i.pI.Type
 }
 
 func (i *JSONImage) Height() int64 {
-	return i.JHeight
+	return i.pI.Height
 }
 
 func (i *JSONImage) Width() int64 {
-	return i.JWidth
+	return i.pI.Width
 }

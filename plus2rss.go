@@ -1,6 +1,9 @@
 package main
 
 import (
+	"code.google.com/p/goauth2/oauth"
+	"code.google.com/p/google-api-go-client/plus/v1"
+	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -18,7 +21,8 @@ const socketTimeout = time.Duration(400 * time.Millisecond)
 var (
 	frontendHost         = flag.String("vhost", "localhost:6543", "the virtual Host header to respond to in the frontend")
 	frontendAddr         = flag.String("http", "localhost:6543", "address to run the frontend on (e.g. :6543, localhost:4321)")
-	simpleKeyFile        = flag.String("simpleKeyFile", "", "File containing simple API access key for Google")
+	oauthSecretFile      = flag.String("oauthSecretFile", "", "file containing a working Google OAuth2 client id and secret")
+	oauthCacheFile       = flag.String("oauthCacheFile", "", "file containing a cached Google OAuth2 access and refresh token")
 	templateDir          = flag.String("templateDir", "./templates", "Directory containing the templates to render html and feeds")
 	frontendReadTimeout  = flag.Duration("frontendReadTimeout", socketTimeout, "frontend http server's socket read timeout")
 	frontendWriteTimeout = flag.Duration("frontendWriteTimeout", socketTimeout, "frontend http server's socket write timeout")
@@ -28,11 +32,15 @@ var (
 func main() {
 	flag.Parse()
 
-	if *simpleKeyFile == "" {
-		log.Fatalf("plus2rss: -simpleKeyFile=FILE is a required command-line argument")
+	if *oauthSecretFile == "" {
+		log.Fatalf("plus2rss: -oauthSecretFile=FILE is a required command-line argument")
 	}
 
-	fs, err := feedStorage(*simpleKeyFile)
+	if *oauthCacheFile == "" {
+		log.Fatalf("plus2rss: -oauthCacheFile=FILE is a required command-line argument")
+	}
+
+	fs, err := feedStorage(*oauthSecretFile, *oauthCacheFile)
 	if err != nil {
 		log.Fatalf("Could not boot feed storage: %s", err)
 	}
@@ -42,13 +50,44 @@ func main() {
 	log.Printf("frontend shutdown: %s", err)
 }
 
-func feedStorage(simpleKeyFile string) (FeedStorage, error) {
-	simpleKeySlice, err := ioutil.ReadFile(simpleKeyFile)
+func feedStorage(secretFile, cacheFile string) (FeedStorage, error) {
+	oauthSecret, err := ioutil.ReadFile(secretFile)
 	if err != nil {
 		return nil, err
 	}
-	simpleKey := strings.TrimSpace(string(simpleKeySlice))
-	retriever := &FeedRetriever{http.DefaultClient, simpleKey}
+	lines := strings.Split(string(oauthSecret), "\n")
+	if len(lines) < 3 {
+		return nil, errors.New("not enough lines in oauth config file")
+	}
+
+	clientId := strings.TrimSpace(lines[0])
+	secret := strings.TrimSpace(lines[1])
+
+	c := &oauth.Config{
+		ClientId:     clientId,
+		ClientSecret: secret,
+		Scope:        plus.PlusMeScope,
+		AuthURL:      "https://accounts.google.com/o/oauth2/auth",
+		TokenURL:     "https://accounts.google.com/o/oauth2/token",
+	}
+
+	transport := &oauth.Transport{
+		Config:    c,
+		Transport: http.DefaultTransport,
+	}
+	tokenCache := oauth.CacheFile(cacheFile)
+	tok, err := tokenCache.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	// Handle refreshing tokens outside of this process
+	transport.Token = &oauth.Token{AccessToken: tok.AccessToken}
+	srv, err := plus.New(transport.Client())
+	if err != nil {
+		return nil, err
+	}
+	retriever := &FeedRetriever{srv}
 	return retriever, nil
 }
 
