@@ -8,6 +8,20 @@ import (
 	"text/template"
 )
 
+var (
+	Body404 = []byte("No such feed.\n")
+	Body500 = []byte("Something went wrong. Wait a minute, please.\n")
+	Body503 = []byte("Taking too long.\n")
+
+	userIdPath        = regexp.MustCompile(`/u/(\d+)$`)
+	userIdMetaPath    = regexp.MustCompile(`/u_meta/(\d+)$`)
+	justUserIdR       = regexp.MustCompile(`^\d+$`)
+	plusUrlR          = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
+	askForURLTemplate = template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
+	feedMetaTemplate  = template.Must(template.ParseFiles(templateDir + "/feed_meta.template.html"))
+	feedTemplate      = template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
+)
+
 type Frontend struct {
 	host              string
 	feedStore         FeedStorage
@@ -21,19 +35,7 @@ type FeedView struct {
 	Req *http.Request
 }
 
-var userIdPath = regexp.MustCompile(`/u/(\d+)$`)
-var userIdMetaPath = regexp.MustCompile(`/u_meta/(\d+)$`)
-var justUserIdR = regexp.MustCompile(`^\d+$`)
-var plusUrlR = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
-
-var Body404 = []byte("No such feed.\n")
-var Body500 = []byte("Something went wrong. Wait a minute, please.\n")
-var Body503 = []byte("Taking too long.\n")
-
 func NewFrontend(fs FeedStorage, host string, templateDir string) *Frontend {
-	askForURLTemplate := template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
-	feedTemplate := template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
-	feedMetaTemplate := template.Must(template.ParseFiles(templateDir + "/feed_meta.template.html"))
 	return &Frontend{host, fs, askForURLTemplate, feedTemplate, feedMetaTemplate}
 }
 
