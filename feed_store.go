@@ -24,7 +24,6 @@ func (f *FeedRetriever) Find(userId string) (Feed, error) {
 	go func() {
 		actor, err := f.retrievePerson(userId)
 		if err != nil {
-			log.Printf("ERROR Unable to retrieve user %s: %s", userId, err)
 			ch <- personUnion{nil, err}
 			return
 		}
