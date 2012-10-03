@@ -59,10 +59,6 @@ func (s statSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-type statHolder struct {
-	Stats []Stat
-}
-
 type StatHandler struct {
 	reg metrics.Registry
 }
