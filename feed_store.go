@@ -2,21 +2,8 @@ package main
 
 import (
 	"code.google.com/p/google-api-go-client/plus/v1"
-	"github.com/rcrowley/go-metrics"
 	"log"
 )
-
-var (
-	findAttempts  = metrics.NewCounter()
-	findSuccesses = metrics.NewCounter()
-	findFailures  = metrics.NewCounter()
-)
-
-func init() {
-	registry.Register("feed_retriever_find_attempts", findAttempts)
-	registry.Register("feed_retriever_find_successes", findSuccesses)
-	registry.Register("feed_retriever_find_failures", findFailures)
-}
 
 type FeedRetriever struct {
 	client *plus.Service
@@ -33,6 +20,13 @@ type personUnion struct {
 
 // TODO An obvious place to cache data.
 func (f *FeedRetriever) Find(userId string) (Feed, error) {
+	var feed Feed
+	var err error
+	findTimer.Time(func() { feed, err = f.find(userId) })
+	return feed, err
+}
+
+func (f *FeedRetriever) find(userId string) (Feed, error) {
 	findAttempts.Inc(1)
 	ch := make(chan personUnion)
 	go func() {

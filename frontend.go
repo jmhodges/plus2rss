@@ -109,7 +109,11 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 
 	feedView := &FeedView{feed, r}
 	buf := new(bytes.Buffer)
-	err := f.feedTemplate.Execute(buf, feedView)
+
+	var err error
+	feedExecuteTiming.Time(func() {
+		err = f.feedTemplate.Execute(buf, feedView)
+	})
 	if err != nil {
 		log.Printf("Error in UserFeed template: %s", err)
 		Sigh500(w, r)

@@ -76,6 +76,25 @@ func (s *StatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch v := obj.(type) {
 		case metrics.Counter:
 			stats = append(stats, Stat{s, strconv.FormatInt(v.Count(), 10)})
+		case metrics.Timer:
+			fifteen := strconv.FormatFloat(v.Rate15(), 'g', -1, 64)
+			stats = append(stats, Stat{s + "_fifteen_minute_rate", fifteen})
+			five := strconv.FormatFloat(v.Rate5(), 'g', -1, 64)
+			stats = append(stats, Stat{s + "_five_minute_rate", five})
+			stats = append(stats, Stat{s + "_one_minute_rate", strconv.FormatFloat(v.Rate1(), 'g', -1, 64)})
+
+			// Since Percentile returns nanos, these are always integers and
+			// are far more readable when treated as such.
+			p50 := strconv.FormatInt(int64(v.Percentile(0.50)), 10)
+			stats = append(stats, Stat{s + "_p50", p50})
+			p99 := strconv.FormatInt(int64(v.Percentile(0.99)), 10)
+			stats = append(stats, Stat{s + "_p99", p99})
+			p999 := strconv.FormatInt(int64(v.Percentile(0.999)), 10)
+			stats = append(stats, Stat{s + "_p999", p999})
+			p9999 := strconv.FormatInt(int64(v.Percentile(0.9999)), 10)
+			stats = append(stats, Stat{s + "_p9999", p9999})
+		default:
+			// TODO(jmhodges): Gauges, Meters, Histograms, Samples
 		}
 	})
 	sort.Sort(statSlice(stats))
