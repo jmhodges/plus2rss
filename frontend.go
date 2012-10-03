@@ -92,7 +92,7 @@ func (f *Frontend) UserFeedMeta(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	err := f.feedMetaTemplate.Execute(buf, feedView)
 	if err != nil {
-		log.Printf("Error in UserFeedMeta template: %s", err)
+		log.Printf("ERROR UserFeedMeta template execute: %s", err)
 		Sigh500(w, r)
 		return
 	}
@@ -115,7 +115,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 		err = f.feedTemplate.Execute(buf, feedView)
 	})
 	if err != nil {
-		log.Printf("Error in UserFeed template: %s", err)
+		log.Printf("ERROR UserFeed template execute: %s", err)
 		Sigh500(w, r)
 		return
 	}
@@ -139,7 +139,7 @@ func (f *Frontend) verifyUserOrErrorResponse(w http.ResponseWriter, r *http.Requ
 		NoSuchFeed(w, r)
 		return nil
 	} else if err != nil {
-		log.Printf("Finding the feed for a user blew up: %#v", err)
+		log.Printf("ERROR Finding the feed for a user blew up: %#v", err)
 		Sigh500(w, r)
 		return nil
 	}
@@ -151,7 +151,7 @@ func (f *Frontend) AskForURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err := f.askForURLTemplate.Execute(w, nil)
 	if err != nil {
-		log.Printf("AskForUrl template execute: %s", err)
+		log.Printf("ERROR AskForUrl template execute: %s", err)
 	}
 }
 
