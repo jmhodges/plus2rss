@@ -77,32 +77,8 @@ type JSONAttachment struct {
 	pAO plus.ActivityObjectAttachments
 }
 
-type JSONActor struct {
-	Id          string     `json:"id"`
-	DisplayName string     `json:"displayName"`
-	URL         string     `json:"url"`
-	Image       *JSONImage `json:"image"`
-}
-
-type JSONPlusObject struct {
-	ObjectType   string
-	Id           string
-	Actor        JSONActor
-	Content      string
-	URL          string
-	JAttachments []*JSONAttachment `json:"attachments"`
-	// TODO: replies, plusoners, resharers
-}
-
 type JSONActivity struct {
 	pA plus.Activity
-}
-
-type JSONFeed struct {
-	JTitle   string          `json:"title"`
-	JUpdated string          `json:"updated"`
-	JId      string          `json:"id"`
-	JItems   []*JSONActivity `json:"items"`
 }
 
 func (j *ActorFeed) Title() string {
