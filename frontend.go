@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"github.com/bmizerany/pat"
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 	"text/template"
 )
 
@@ -13,13 +15,10 @@ var (
 	Body500 = []byte("Something went wrong. Wait a minute, please.\n")
 	Body503 = []byte("Taking too long.\n")
 
-	userIdPath        = regexp.MustCompile(`/u/(\d+)$`)
-	userIdMetaPath    = regexp.MustCompile(`/u_meta/(\d+)$`)
-	justUserIdR       = regexp.MustCompile(`^\d+$`)
-	plusUrlR          = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
-	askForURLTemplate = template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
-	feedMetaTemplate  = template.Must(template.ParseFiles(templateDir + "/feed_meta.template.html"))
-	feedTemplate      = template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
+	userIdPath     = regexp.MustCompile(`/u/(\d+)$`)
+	userIdMetaPath = regexp.MustCompile(`/u_meta/(\d+)$`)
+	justUserIdR    = regexp.MustCompile(`^\d+$`)
+	plusUrlR       = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
 )
 
 type Frontend struct {
@@ -35,56 +34,41 @@ type FeedView struct {
 	Req *http.Request
 }
 
-func NewFrontend(fs FeedStorage, host string, templateDir string) *Frontend {
-	return &Frontend{host, fs, askForURLTemplate, feedTemplate, feedMetaTemplate}
-}
-
 //   GET / -> AskForURL (HEAD, too)
 //   GET /u/some_user_id -> UserFeed() (HEAD, too)
 //   GET /u_meta/some_user_id -> UserFeedMeta() (HEAD, too)
 //   POST /plus/enqueue -> CheckURLOrUserId
-func (f *Frontend) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func NewFrontendMux(fs FeedStorage, host string, templateDir string) http.Handler {
+	askForURLTemplate := template.Must(template.ParseFiles(templateDir + "/ask_for_url.template.html"))
+	feedMetaTemplate := template.Must(template.ParseFiles(templateDir + "/feed_meta.template.html"))
+	feedTemplate := template.Must(template.ParseFiles(templateDir + "/feed.template.xml"))
+	host = strings.TrimRight(host, "/")
+	f := &Frontend{host, fs, askForURLTemplate, feedTemplate, feedMetaTemplate}
+	m := pat.New()
 
-	if r.Host != f.host {
-		log.Printf("Request asked for %s, expected %s", r.Host, f.host)
-		http.Redirect(w, r, "http://"+f.host, 302)
-	}
-
-	err := r.ParseForm()
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Unable to parse request"))
-		return
-	}
-
-	uMatch := userIdPath.FindAllStringSubmatch(r.URL.Path, -1)
-	if len(uMatch) > 0 && len(uMatch[0][1]) > 0 && (r.Method == "GET" || r.Method == "HEAD") {
-		r.Form.Add("user_id", uMatch[0][1])
-		f.UserFeed(w, r)
-		return
-	}
-
-	uMetaMatch := userIdMetaPath.FindAllStringSubmatch(r.URL.Path, -1)
-	if len(uMetaMatch) > 0 && len(uMetaMatch[0][1]) > 0 && (r.Method == "GET" || r.Method == "HEAD") {
-		r.Form.Add("user_id", uMetaMatch[0][1])
-		f.UserFeedMeta(w, r)
-		return
-	}
-
-	if r.URL.Path == "/plus/enqueue" && r.Method == "POST" {
-		f.CheckURLOrUserId(w, r)
-		return
-	}
-
-	if r.URL.Path == "/" && (r.Method == "GET" || r.Method == "HEAD") {
+	askForURL := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.AskForURL(w, r)
-		return
-	}
+	})
+	m.Get("/", askForURL)
+	m.Head("/", askForURL)
 
-	log.Printf("NotFound Vars: %#v\n", r.Form)
-	log.Printf("NotFound Raw URL: %s\n", r.URL)
-	w.WriteHeader(http.StatusNotFound)
-	return
+	userFeed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		f.UserFeed(w, r)
+	})
+	m.Get("/u/:user_id", userFeed)
+	m.Head("/u/:user_id", userFeed)
+
+	userFeedMeta := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		f.UserFeedMeta(w, r)
+	})
+	m.Get("/u_meta/:user_id", userFeedMeta)
+	m.Head("/u_meta/:user_id", userFeedMeta)
+
+	m.Post("/plus/enqueue", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		f.CheckURLOrUserId(w, r)
+	}))
+
+	return m
 }
 
 // Handlers
@@ -127,7 +111,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f *Frontend) verifyUserOrErrorResponse(w http.ResponseWriter, r *http.Request) Feed {
-	userId := PlausibleUserId(r.Form.Get("user_id"))
+	userId := PlausibleUserId(r.FormValue(":user_id"))
 	if userId == "" {
 		// TODO: flash[:notice] thing
 		// user name seems invalid
