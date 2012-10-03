@@ -83,8 +83,8 @@ func (s *StatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			stats = append(stats, Stat{s + "_five_minute_rate", five})
 			stats = append(stats, Stat{s + "_one_minute_rate", strconv.FormatFloat(v.Rate1(), 'g', -1, 64)})
 
-			// Since Percentile returns nanos, these are always integers and
-			// are far more readable when treated as such.
+			// Since Percentile returns integer nanos, its values are easier
+			// to read when treated as such.
 			p50 := strconv.FormatInt(int64(v.Percentile(0.50)), 10)
 			stats = append(stats, Stat{s + "_p50", p50})
 			p99 := strconv.FormatInt(int64(v.Percentile(0.99)), 10)
