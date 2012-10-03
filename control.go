@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/rcrowley/go-metrics"
-	"text/template"
 	"log"
 	"net/http"
 	"sort"
 	"strconv"
+	"text/template"
 	"time"
 )
 
@@ -33,7 +33,7 @@ func NewStatServer(addr string) *http.Server {
 	return &http.Server{addr, m, d, d, 0, nil}
 }
 
-type ControlIndexHandler struct {}
+type ControlIndexHandler struct{}
 
 func (c *ControlIndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -41,7 +41,7 @@ func (c *ControlIndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 }
 
 type Stat struct {
-	Name string
+	Name  string
 	Value string
 }
 
@@ -60,7 +60,7 @@ func (s statSlice) Swap(i, j int) {
 }
 
 type statHolder struct {
-	Stats []Stat 
+	Stats []Stat
 }
 
 type StatHandler struct {

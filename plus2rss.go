@@ -27,8 +27,8 @@ var (
 	frontendReadTimeout  = flag.Duration("frontendReadTimeout", socketTimeout, "frontend http server's socket read timeout")
 	frontendWriteTimeout = flag.Duration("frontendWriteTimeout", socketTimeout, "frontend http server's socket write timeout")
 	controlAddr          = flag.String("controlAddr", "localhost:5432", "the address to run the control HTTP server on")
-	registry = metrics.NewRegistry()
-	bootTime = time.Now().UTC()
+	registry             = metrics.NewRegistry()
+	bootTime             = time.Now().UTC()
 )
 
 // TODO: handle posts that were reshares
