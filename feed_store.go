@@ -2,18 +2,8 @@ package main
 
 import (
 	"code.google.com/p/google-api-go-client/plus/v1"
-	"fmt"
 	"log"
 )
-
-type InvalidStatusCode struct {
-	code     int
-	urlNoKey string
-}
-
-func (isc *InvalidStatusCode) Error() string {
-	return fmt.Sprintf("Error status code %d from Google+ url %s", isc.code, isc.urlNoKey)
-}
 
 type FeedRetriever struct {
 	Client *plus.Service
