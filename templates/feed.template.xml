@@ -3,7 +3,6 @@
   <title type="html">{{.Title | html}}</title>
   <id>{{.Id | html}}</id>
   <updated>{{.Updated | html}}</updated>
-  {{/* Should use frontendHost, etc. */}}
   <link href="{{.AtomURL|html}}" rel="self" />
   <link href="{{.MetaURL|html}}" />
   {{ range .Items }}
