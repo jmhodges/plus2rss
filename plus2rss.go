@@ -25,7 +25,7 @@ var (
 	frontendWriteTimeout = flag.Duration("frontendWriteTimeout", socketTimeout, "frontend http server's socket write timeout")
 )
 
-// TODO: fix timestamps, add attachments, handle posts that were reshares
+// TODO: handle posts that were reshares
 func main() {
 	flag.Parse()
 
