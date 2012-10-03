@@ -81,7 +81,6 @@ func NewFrontendMux(fs FeedStorage, host string, templateDir string) http.Handle
 	return http.HandlerFunc(hf)
 }
 
-// Handlers
 func (f *Frontend) UserFeedMeta(w http.ResponseWriter, r *http.Request) {
 	feed := f.verifyUserOrErrorResponse(w, r)
 	if feed == nil {

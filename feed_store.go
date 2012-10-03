@@ -19,15 +19,18 @@ type personUnion struct {
 }
 
 // TODO An obvious place to cache data.
-func (f *FeedRetriever) Find(userId string) (Feed, error) {
-	var feed Feed
-	var err error
+func (f *FeedRetriever) Find(userId string) (feed Feed, err error) {
+	findAttempts.Inc(1)
 	findTimer.Time(func() { feed, err = f.find(userId) })
+	if err == nil {
+		findSuccesses.Inc(1)
+	} else {
+		findFailures.Inc(1)
+	}
 	return feed, err
 }
 
 func (f *FeedRetriever) find(userId string) (Feed, error) {
-	findAttempts.Inc(1)
 	ch := make(chan personUnion)
 	go func() {
 		actor, err := f.retrievePerson(userId)
@@ -40,16 +43,13 @@ func (f *FeedRetriever) find(userId string) (Feed, error) {
 
 	feed, err := f.retrieveActivities(userId)
 	if err != nil {
-		findFailures.Inc(1)
 		return nil, err
 	}
 
 	u := <-ch
 	if u.err != nil {
-		findFailures.Inc(1)
 		return nil, u.err
 	}
-	findSuccesses.Inc(1)
 	return &ActorFeed{u.actor, feed}, nil
 }
 
