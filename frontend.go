@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"code.google.com/p/google-api-go-client/googleapi"
 	"github.com/bmizerany/pat"
 	html "html/template"
 	"log"
@@ -134,14 +135,12 @@ func (f *Frontend) verifyUserOrErrorResponse(w http.ResponseWriter, r *http.Requ
 
 	feed, err := f.feedStore.Find(userId)
 
-	if err != nil {
-		log.Printf("Finding the feed for a user blew up: %s", err)
-		Sigh500(w, r)
-		return nil
-	}
-
-	if feed == nil {
+	if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
 		NoSuchFeed(w, r)
+		return nil
+	} else if err != nil {
+		log.Printf("Finding the feed for a user blew up: %#v", err)
+		Sigh500(w, r)
 		return nil
 	}
 
