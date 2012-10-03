@@ -5,7 +5,7 @@ import (
 )
 
 type SimpleKeyTransport struct {
-	Key string
+	Key       string
 	Transport http.RoundTripper
 }
 

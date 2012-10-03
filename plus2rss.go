@@ -19,7 +19,7 @@ const socketTimeout = time.Duration(400 * time.Millisecond)
 var (
 	frontendHost         = flag.String("vhost", "localhost:6543", "the virtual Host header to respond to in the frontend")
 	frontendAddr         = flag.String("http", "localhost:6543", "address to run the frontend on (e.g. :6543, localhost:4321)")
-	simpleKeyFile      = flag.String("simpleKeyFile", "", "file containing a working Google simple key")
+	simpleKeyFile        = flag.String("simpleKeyFile", "", "file containing a working Google simple key")
 	templateDir          = flag.String("templateDir", "./templates", "Directory containing the templates to render html and feeds")
 	frontendReadTimeout  = flag.Duration("frontendReadTimeout", socketTimeout, "frontend http server's socket read timeout")
 	frontendWriteTimeout = flag.Duration("frontendWriteTimeout", socketTimeout, "frontend http server's socket write timeout")
