@@ -94,7 +94,7 @@ func (s *StatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	sort.Sort(statSlice(stats))
-	w.Header().Add("Content-Type", "plain/text")
+	w.Header().Add("Content-Type", "plain/text; charset=utf8")
 	w.WriteHeader(http.StatusOK)
 	err := varsTmpl.Execute(w, stats)
 	if err != nil {
