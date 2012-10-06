@@ -17,15 +17,6 @@ func (t *SimpleKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) 
 	return t.Transport.RoundTrip(r)
 }
 
-type Feed interface {
-	Title() string
-	Id() string
-	Updated() string
-	Items() []Activity
-	ActorName() string
-	ActorId() string
-}
-
 // ActorFeed implements the Feed iterface
 type ActorFeed struct {
 	actor *plus.Person

@@ -13,6 +13,15 @@ type FeedStorage interface {
 	Find(string) (Feed, error)
 }
 
+type Feed interface {
+	Title() string
+	Id() string
+	Updated() string
+	Items() []Activity
+	ActorName() string
+	ActorId() string
+}
+
 type personUnion struct {
 	actor *plus.Person
 	err   error
