@@ -31,11 +31,6 @@ type Frontend struct {
 	feedTemplate      *text.Template
 }
 
-type FeedView struct {
-	Feed
-	Req *http.Request
-}
-
 //   GET / -> AskForURL (HEAD, too)
 //   GET /u/some_user_id -> UserFeed() (HEAD, too)
 //   GET /u_meta/some_user_id -> UserFeedMeta() (HEAD, too)
@@ -200,6 +195,13 @@ func Sigh500(w http.ResponseWriter, r *http.Request) {
 func Sigh503(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(Body503)
+}
+
+// FeedView is a struct that wraps a Feed and an HTTP request to simplify the
+// Atom XML template.
+type FeedView struct {
+	Feed
+	Req *http.Request
 }
 
 func (fv *FeedView) AtomURL() string {
