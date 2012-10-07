@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"code.google.com/p/google-api-go-client/googleapi"
 	"code.google.com/p/google-api-go-client/plus/v1"
 	"log"
@@ -89,5 +88,5 @@ func mustResponse(j []byte, err error) *ResponseFixture {
 }
 
 func nullLog() *log.Logger {
-	return log.New(new(bytes.Buffer), "", 0)
+	return log.New(ioutil.Discard, "", 0)
 }
