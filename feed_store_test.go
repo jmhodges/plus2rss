@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"code.google.com/p/google-api-go-client/googleapi"
 	"code.google.com/p/google-api-go-client/plus/v1"
+	"log"
 	"net/http"
 	"io/ioutil"
 	"testing"
@@ -24,7 +26,7 @@ func TestSuccessfulFind(t *testing.T) {
 		t.Fatalf("unable to make Google+ client: %s", err)
 	}
 	userId := "116810148281701144465"
-	fr := &FeedRetriever{srv}
+	fr := &FeedRetriever{srv, nullLog()}
 	feed, err := fr.Find(userId)
 	if err != nil {
 		t.Fatalf("unable to Find id: %s", err)
@@ -57,7 +59,7 @@ func Test404Find(t *testing.T) {
 			t.Errorf("unable to make Google+ client: %s", err)
 			continue
 		}
-		fr := &FeedRetriever{srv}
+		fr := &FeedRetriever{srv, nullLog()}
 		_, err = fr.Find("444")
 		if err == nil {
 			t.Errorf("no error returned on 404")
@@ -84,4 +86,8 @@ func mustResponse(j []byte, err error) *ResponseFixture {
 		panic(err)
 	}
 	return r
+}
+
+func nullLog() *log.Logger {
+	return log.New(new(bytes.Buffer), "", 0)
 }

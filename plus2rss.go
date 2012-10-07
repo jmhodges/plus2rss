@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -34,9 +35,9 @@ var (
 // TODO: handle posts that were reshares
 func main() {
 	flag.Parse()
-
+	lg := log.New(os.Stderr, "", 0)
 	if *simpleKeyFile == "" {
-		log.Fatalf("plus2rss: -simpleKeyFile=FILE is a required command-line argument")
+		lg.Fatalf("plus2rss: -simpleKeyFile=FILE is a required command-line argument")
 	}
 
 	ch := make(chan error)
@@ -45,9 +46,9 @@ func main() {
 		ch <- cs.ListenAndServe()
 	}()
 
-	fs, err := feedStorage(*simpleKeyFile)
+	fs, err := feedStorage(*simpleKeyFile, lg)
 	if err != nil {
-		log.Fatalf("Could not boot feed storage: %s", err)
+		lg.Fatalf("Could not boot feed storage: %s", err)
 	}
 
 	fr := frontend(fs, *frontendHost, *frontendAddr, *templateDir, *frontendReadTimeout, *frontendWriteTimeout)
@@ -56,10 +57,10 @@ func main() {
 	}()
 
 	err = <-ch
-	log.Printf("frontend shutdown: %s", err)
+	lg.Printf("frontend shutdown: %s", err)
 }
 
-func feedStorage(simpleFile string) (FeedStorage, error) {
+func feedStorage(simpleFile string, lg *log.Logger) (FeedStorage, error) {
 	simpleKey, err := ioutil.ReadFile(simpleFile)
 	if err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func feedStorage(simpleFile string) (FeedStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	retriever := &FeedRetriever{srv}
+	retriever := &FeedRetriever{srv, lg}
 	return retriever, nil
 }
 

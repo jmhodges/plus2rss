@@ -7,6 +7,7 @@ import (
 
 type FeedRetriever struct {
 	client *plus.Service
+	lg *log.Logger
 }
 
 type FeedStorage interface {
@@ -63,11 +64,11 @@ func (f *FeedRetriever) find(userId string) (Feed, error) {
 }
 
 func (f *FeedRetriever) retrievePerson(userId string) (*plus.Person, error) {
-	log.Printf("Person: %s", userId)
+	f.lg.Printf("Person: %s", userId)
 	return f.client.People.Get(userId).Do()
 }
 
 func (f *FeedRetriever) retrieveActivities(userId string) (*plus.ActivityFeed, error) {
-	log.Printf("List Public Activities of User: %s", userId)
+	f.lg.Printf("List Public Activities of User: %s", userId)
 	return f.client.Activities.List(userId, "public").Do()
 }
