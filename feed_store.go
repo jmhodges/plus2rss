@@ -7,7 +7,7 @@ import (
 
 type FeedRetriever struct {
 	client *plus.Service
-	lg *log.Logger
+	lg     *log.Logger
 }
 
 type FeedStorage interface {

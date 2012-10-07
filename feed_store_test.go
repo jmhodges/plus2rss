@@ -3,17 +3,17 @@ package main
 import (
 	"code.google.com/p/google-api-go-client/googleapi"
 	"code.google.com/p/google-api-go-client/plus/v1"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"io/ioutil"
 	"testing"
 )
 
 var (
-	personResp = mustResponse(ioutil.ReadFile("./testdata/person.json"))
-	feedResp = mustResponse(ioutil.ReadFile("./testdata/feed.json"))
+	personResp    = mustResponse(ioutil.ReadFile("./testdata/person.json"))
+	feedResp      = mustResponse(ioutil.ReadFile("./testdata/feed.json"))
 	person404Resp = mustResponse(ioutil.ReadFile("./testdata/person_404.json"))
-	feed404Resp = mustResponse(ioutil.ReadFile("./testdata/feed_404.json"))
+	feed404Resp   = mustResponse(ioutil.ReadFile("./testdata/feed_404.json"))
 )
 
 func TestSuccessfulFind(t *testing.T) {
