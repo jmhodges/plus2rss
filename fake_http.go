@@ -17,7 +17,7 @@ var (
 )
 
 // FakeClientTransport implements http.RoundTripper to provide a means of
-// writing tests of code using a remote HTTP service without a network
+// writing tests for code using a remote HTTP service without a network
 // connection. It assumes all information needed to specify a correct response
 // is in the URL and the HTTP method used. See also
 // net/http/httptest.ResponseRecorder.
