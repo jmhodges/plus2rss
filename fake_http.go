@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -59,55 +58,4 @@ func (t *FakeClientTransport) Add(u *url.URL, method string, re *httptest.Respon
 		t.items[method] = methMap
 	}
 	methMap[u.String()] = re
-}
-
-type jsonFixture struct {
-	URL       string              `json:"url"`
-	Code      int                 `json:"code"`
-	Body      string              `json:"body"`
-	HeaderMap map[string][]string `json:"headers"`
-}
-
-// ResponseFixture contains the URL, headers, and body of a given HTTP
-// response that was stored as JSON.
-type ResponseFixture struct {
-	URL      *url.URL
-	Response *httptest.ResponseRecorder
-}
-
-func (r *ResponseFixture) UnmarshalJSON(j []byte) error {
-	obj := &jsonFixture{}
-	err := json.Unmarshal(j, obj)
-	if err != nil {
-		return err
-	}
-	u, err := url.Parse(obj.URL)
-	if err != nil {
-		return err
-	}
-	re := &httptest.ResponseRecorder{
-		Code:      obj.Code,
-		Body:      bytes.NewBuffer([]byte(obj.Body)),
-		HeaderMap: make(map[string][]string),
-	}
-	for k, v := range obj.HeaderMap {
-		arr := make([]string, 0, len(v))
-		for _, vv := range v {
-			arr = append(arr, vv)
-		}
-		re.HeaderMap[k] = arr
-	}
-	r.URL = u
-	r.Response = re
-	return nil
-}
-
-func (r *ResponseFixture) MarshalJSON() ([]byte, error) {
-	obj := &jsonFixture{
-		URL:       r.URL.String(),
-		Code:      r.Response.Code,
-		Body:      string(r.Response.Body.Bytes()),
-		HeaderMap: make(map[string][]string),
-	}
-	return json.Marshal(obj)
 }
