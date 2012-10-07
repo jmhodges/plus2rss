@@ -87,10 +87,8 @@ func (r *ResponseFixture) UnmarshalJSON(j []byte) error {
 		HeaderMap: make(map[string][]string),
 	}
 	for k, v := range obj.HeaderMap {
-		arr := make([]string, 0, len(v))
-		for _, vv := range v {
-			arr = append(arr, vv)
-		}
+		var arr []string
+		copy(arr, v)
 		re.HeaderMap[k] = arr
 	}
 	r.URL = u
