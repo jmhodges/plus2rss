@@ -29,13 +29,11 @@ func NewStatServer(addr string) *http.Server {
 	d := time.Duration(400 * time.Millisecond)
 	m := http.NewServeMux()
 	m.Handle("/vars", &StatHandler{registry})
-	m.Handle("/", &ControlIndexHandler{})
+	m.Handle("/", http.HandlerFunc(ControlIndexHandler))
 	return &http.Server{Addr: addr, Handler: m, ReadTimeout: d, WriteTimeout: d,}
 }
 
-type ControlIndexHandler struct{}
-
-func (c *ControlIndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func ControlIndexHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(index)
 }

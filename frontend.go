@@ -43,27 +43,19 @@ func NewFrontendMux(fs FeedStorage, host string, templateDir string) http.Handle
 	f := &Frontend{host, fs, askForURLTemplate, feedMetaTemplate, feedTemplate}
 	m := pat.New()
 
-	askForURL := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		f.AskForURL(w, r)
-	})
+	askForURL := http.HandlerFunc(f.AskForURL)
 	m.Get("/", askForURL)
 	m.Head("/", askForURL)
 
-	userFeed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		f.UserFeed(w, r)
-	})
+	userFeed := http.HandlerFunc(f.UserFeed)
 	m.Get("/u/:user_id", userFeed)
 	m.Head("/u/:user_id", userFeed)
 
-	userFeedMeta := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		f.UserFeedMeta(w, r)
-	})
+	userFeedMeta := http.HandlerFunc(f.UserFeedMeta)
 	m.Get("/u_meta/:user_id", userFeedMeta)
 	m.Head("/u_meta/:user_id", userFeedMeta)
 
-	m.Post("/plus/enqueue", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		f.CheckURLOrUserId(w, r)
-	}))
+	m.Post("/plus/enqueue", http.HandlerFunc(f.CheckURLOrUserId))
 
 	hf := func(w http.ResponseWriter, r *http.Request) {
 		if r.Host != f.host {
