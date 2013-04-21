@@ -77,5 +77,5 @@ func feedStorage(simpleFile string, lg *log.Logger) (FeedStorage, error) {
 
 func frontend(fs FeedStorage, host, addr, templateDir string, readTimeout, writeTimeout time.Duration) *http.Server {
 	m := NewFrontendMux(fs, host, templateDir)
-	return &http.Server{addr, m, readTimeout, writeTimeout, 0, nil}
+	return &http.Server{Addr: addr, Handler: m, ReadTimeout: readTimeout, WriteTimeout: writeTimeout,}
 }

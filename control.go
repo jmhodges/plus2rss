@@ -30,7 +30,7 @@ func NewStatServer(addr string) *http.Server {
 	m := http.NewServeMux()
 	m.Handle("/vars", &StatHandler{registry})
 	m.Handle("/", &ControlIndexHandler{})
-	return &http.Server{addr, m, d, d, 0, nil}
+	return &http.Server{Addr: addr, Handler: m, ReadTimeout: d, WriteTimeout: d,}
 }
 
 type ControlIndexHandler struct{}
