@@ -75,7 +75,7 @@ func (f *Frontend) UserFeedMeta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	feedView := &FeedView{feed, r}
+	feedView := &FeedView{feed, f.host}
 	buf := new(bytes.Buffer)
 	err := f.feedMetaTemplate.Execute(buf, feedView)
 	if err != nil {
@@ -94,7 +94,7 @@ func (f *Frontend) UserFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	feedView := &FeedView{feed, r}
+	feedView := &FeedView{feed, f.host}
 	buf := new(bytes.Buffer)
 
 	var err error
@@ -189,19 +189,18 @@ func Sigh503(w http.ResponseWriter, r *http.Request) {
 	w.Write(Body503)
 }
 
-// FeedView is a struct that wraps a Feed and an HTTP request to simplify the
-// Atom XML template.
+// FeedView is a helper struct for rendering the feed xml.
 type FeedView struct {
 	Feed
-	Req *http.Request
+	Host string
 }
 
 func (fv *FeedView) AtomURL() string {
-	return "http://" + fv.Req.Host + "/u/" + fv.ActorId()
+	return "http://" + fv.Host + "/u/" + fv.ActorId()
 }
 
 func (fv *FeedView) MetaURL() string {
-	return "http://" + fv.Req.Host + "/u_meta/" + fv.ActorId()
+	return "http://" + fv.Host + "/u_meta/" + fv.ActorId()
 }
 
 func (fv *FeedView) Title() string {
