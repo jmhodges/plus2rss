@@ -17,7 +17,7 @@ type Service interface {
 }
 
 const (
-	socketTimeout = time.Duration(400 * time.Millisecond)
+	timeout = time.Duration(5 * time.Second)
 )
 
 var (
@@ -25,8 +25,8 @@ var (
 	frontendAddr         = flag.String("http", "localhost:6543", "address to run the frontend on (e.g. :6543, localhost:4321)")
 	simpleKeyFile        = flag.String("simpleKeyFile", "", "file containing a working Google simple key")
 	templateDir          = flag.String("templateDir", "./templates", "Directory containing the templates to render html and feeds")
-	frontendReadTimeout  = flag.Duration("frontendReadTimeout", socketTimeout, "frontend http server's socket read timeout")
-	frontendWriteTimeout = flag.Duration("frontendWriteTimeout", socketTimeout, "frontend http server's socket write timeout")
+	frontendReadTimeout  = flag.Duration("frontendReadTimeout", timeout, "frontend http server's total request read timeout")
+	frontendWriteTimeout = flag.Duration("frontendWriteTimeout", timeout, "frontend http server's total request write timeout")
 	controlAddr          = flag.String("controlAddr", "localhost:5432", "the address to run the control HTTP server on")
 	registry             = metrics.NewRegistry()
 	bootTime             = time.Now().UTC()
@@ -77,5 +77,5 @@ func feedStorage(simpleFile string, lg *log.Logger) (FeedStorage, error) {
 
 func frontend(fs FeedStorage, host, addr, templateDir string, readTimeout, writeTimeout time.Duration) *http.Server {
 	m := NewFrontendMux(fs, host, templateDir)
-	return &http.Server{Addr: addr, Handler: m, ReadTimeout: readTimeout, WriteTimeout: writeTimeout,}
+	return &http.Server{Addr: addr, Handler: m, ReadTimeout: readTimeout, WriteTimeout: writeTimeout}
 }
