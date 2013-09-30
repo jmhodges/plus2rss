@@ -24,8 +24,10 @@ type Feed interface {
 }
 
 // TODO An obvious place to cache data.
-func (f *FeedRetriever) Find(userId string) (feed Feed, err error) {
+func (f *FeedRetriever) Find(userId string) (Feed, error) {
 	findAttempts.Inc(1)
+	var feed Feed
+	var err error
 	findTimer.Time(func() { feed, err = f.find(userId) })
 	if err == nil {
 		findSuccesses.Inc(1)
