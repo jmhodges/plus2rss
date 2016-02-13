@@ -1,12 +1,13 @@
 package main
 
 import (
-	"code.google.com/p/google-api-go-client/googleapi"
-	"code.google.com/p/google-api-go-client/plus/v1"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"testing"
+
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/plus/v1"
 )
 
 var (

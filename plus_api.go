@@ -1,8 +1,9 @@
 package main
 
 import (
-	"code.google.com/p/google-api-go-client/plus/v1"
 	"net/http"
+
+	"google.golang.org/api/plus/v1"
 )
 
 type SimpleKeyTransport struct {
@@ -160,7 +161,7 @@ func (a *JSONAttachment) Image() Image {
 }
 func (a *JSONAttachment) FullImage() Image {
 	fi := a.pAO.FullImage
-	ai := plus.ActivityObjectAttachmentsImage{fi.Height, fi.Type, fi.Url, fi.Width}
+	ai := plus.ActivityObjectAttachmentsImage{fi.Height, fi.Type, fi.Url, fi.Width, nil}
 	return &JSONImage{ai}
 }
 

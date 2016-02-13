@@ -2,14 +2,15 @@ package main
 
 import (
 	"bytes"
-	"code.google.com/p/google-api-go-client/googleapi"
-	"github.com/bmizerany/pat"
 	html "html/template"
 	"log"
 	"net/http"
 	"regexp"
 	"strings"
 	text "text/template"
+
+	"github.com/bmizerany/pat"
+	"google.golang.org/api/googleapi"
 )
 
 var (

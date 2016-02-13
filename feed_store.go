@@ -1,8 +1,9 @@
 package main
 
 import (
-	"code.google.com/p/google-api-go-client/plus/v1"
 	"log"
+
+	"google.golang.org/api/plus/v1"
 )
 
 type FeedRetriever struct {

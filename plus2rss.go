@@ -1,15 +1,16 @@
 package main
 
 import (
-	"code.google.com/p/google-api-go-client/plus/v1"
 	"flag"
-	"github.com/rcrowley/go-metrics"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/rcrowley/go-metrics"
+	"google.golang.org/api/plus/v1"
 )
 
 type Service interface {
