@@ -37,6 +37,10 @@ func TestSuccessfulFind(t *testing.T) {
 	if "Russ Cox" != feed.ActorName() {
 		t.Errorf("expected name: \"Russ Cox\", actual name: %#v", feed.ActorName())
 	}
+	feedID := "plus2rss-" + userId
+	if feed.Id() != feedID {
+		t.Errorf("feed.ID: want %q, got %q", feedID, feed.Id())
+	}
 }
 
 var resp404Table = []struct {

@@ -78,7 +78,7 @@ func (j *ActorFeed) Title() string {
 }
 
 func (j *ActorFeed) Id() string {
-	return j.feed.Id
+	return "plus2rss-" + j.actor.Id
 }
 
 func (j *ActorFeed) Updated() string {
