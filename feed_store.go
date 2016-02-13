@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"google.golang.org/api/plus/v1"
+	plus "google.golang.org/api/plus/v1"
 )
 
 type FeedRetriever struct {

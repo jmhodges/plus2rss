@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"google.golang.org/api/plus/v1"
+	plus "google.golang.org/api/plus/v1"
 )
 
 type SimpleKeyTransport struct {

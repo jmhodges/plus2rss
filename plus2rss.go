@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/rcrowley/go-metrics"
-	"google.golang.org/api/plus/v1"
+	plus "google.golang.org/api/plus/v1"
 )
 
 type Service interface {

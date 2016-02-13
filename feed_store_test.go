@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"google.golang.org/api/googleapi"
-	"google.golang.org/api/plus/v1"
+	plus "google.golang.org/api/plus/v1"
 )
 
 var (
