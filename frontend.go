@@ -20,9 +20,10 @@ var (
 
 	userIdPath     = regexp.MustCompile(`/u/(\d+)$`)
 	userIdMetaPath = regexp.MustCompile(`/u_meta/(\d+)$`)
-	justUserIdR    = regexp.MustCompile(`^\d+$`)
+	justUserIdR    = regexp.MustCompile(`^(\d+|\+[A-Za-z0-9_]+)$`)
 	plusUrlR       = regexp.MustCompile(`^https?://plus.google.com/(\d+)/?`)
 	mobilePlusUrlR = regexp.MustCompile(`^https?://plus.google.com/app/basic/(\d+)/posts/?`)
+	plusUserUrlR   = regexp.MustCompile(`^https?://plus.google.com/(\+[A-Za-z0-9_]+)`)
 )
 
 type Frontend struct {
@@ -174,7 +175,11 @@ func PlausibleUserId(urlOrUserId string) string {
 	if justUserIdR.MatchString(urlOrUserId) {
 		return urlOrUserId
 	}
-	m := plusUrlR.FindStringSubmatch(urlOrUserId)
+	m := plusUserUrlR.FindStringSubmatch(urlOrUserId)
+	if m != nil && len(m) == 2 {
+		return m[1]
+	}
+	m = plusUrlR.FindStringSubmatch(urlOrUserId)
 	if m != nil && len(m) == 2 {
 		return m[1]
 	}
