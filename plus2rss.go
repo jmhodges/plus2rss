@@ -66,7 +66,7 @@ func feedStorage(simpleFile string, lg *log.Logger) (FeedStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	key := strings.TrimSpace(string(simpleKey)) // FIXME make json
+	key := strings.TrimSpace(string(simpleKey))
 	t := &SimpleKeyTransport{Key: key, Transport: http.DefaultTransport}
 	srv, err := plus.New(&http.Client{Transport: t})
 	if err != nil {
